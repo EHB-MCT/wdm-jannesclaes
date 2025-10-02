@@ -1,0 +1,33 @@
+.btn {
+    width: 35vw;
+    height: 25vw;
+    margin: 0.5vw;
+}
+
+#dashboard {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+}
+
+#buttons {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#submitBtn {
+    width: 10vw;
+}
+
+#buttons, #inputs {
+    margin: 2vh 0;
+}
+
+span {
+    display: flex;
+    gap: 10px;
+}
+
+input {
+    height: 20px;
+}

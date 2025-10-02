@@ -10,21 +10,25 @@ const submitBtn = document.getElementById("submitBtn")
 let transport = ""
 
 car.onclick = function(){
-    console.log("auto");
+    //console.log("auto");
+    transport = "auto"
 };
 
 bike.onclick = function(){
-    console.log("fiets");
+    //console.log("fiets");
+    transport = "fiets"
 };
 
 train.onclick = function(){
-    console.log("trein");
+    //console.log("trein");
+    transport = "trein"
 };
 
 walk.onclick = function(){
-    console.log("te voet");
+    //console.log("te voet");
+    transport = "benen"
 };
 
 submitBtn.onclick =function(){
-    console.log(`je reis van ${inputDuration.value} kilometer duurde ${inputDistance.value} minuten.`)
+    console.log(`je reis met de ${transport} van ${inputDuration.value} kilometer duurde ${inputDistance.value} minuten.`)
 }
