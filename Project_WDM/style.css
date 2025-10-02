@@ -1,9 +1,14 @@
 .btn {
-    width: 49vw;
+    width: 48vw;
     height: 25vw;
 }
 
 #dashboard {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#buttons {
     display: flex;
     flex-wrap: wrap;
 }
