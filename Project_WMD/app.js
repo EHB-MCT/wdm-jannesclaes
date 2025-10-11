@@ -2,7 +2,8 @@ console.log("Hello World")
 
 const car = document.getElementById("carBtn")
 const bike = document.getElementById("bikeBtn")
-const train = document.getElementById("trainBtn")
+const train = document.getElementById("nmbsBtn")
+const bus = document.getElementById("deLijnBtn")
 const walk = document.getElementById("walkBtn")
 
 const submitBtn = document.getElementById("submitBtn")
@@ -22,6 +23,12 @@ bike.onclick = function(){
 train.onclick = function(){
     //console.log("trein");
     transport = "trein"
+};
+
+bus.onclick = function(){
+    //console.log("trein");
+    transport = "bus"
+    
 };
 
 walk.onclick = function(){
