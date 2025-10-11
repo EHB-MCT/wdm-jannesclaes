@@ -28,7 +28,7 @@ train.onclick = function(){
 bus.onclick = function(){
     //console.log("trein");
     transport = "bus"
-    
+
 };
 
 walk.onclick = function(){
@@ -48,7 +48,53 @@ async function getLijnHalteData() {
     const response = await fetch(url, {
       method: "GET",
       headers: {
-        "Ocp-Apim-Subscription-Key": "e0e62df8f3514026b63deb400729c080", // <-- zet je echte key hier
+        "Ocp-Apim-Subscription-Key": "e0e62df8f3514026b63deb400729c080", 
+        "Accept": "application/json"
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Response status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log(result);
+  } catch (error) {
+    console.error("Fout bij ophalen:", error.message);
+  }
+}
+
+async function getLijnRouteData() {
+  const url = "https://api.delijn.be/DLZoekOpenData/v1/zoek/lijnrichtingen/*?huidigePositie=51.0299814,4.9740799&maxAantalHits=3";
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Ocp-Apim-Subscription-Key": "e0e62df8f3514026b63deb400729c080", 
+        "Accept": "application/json"
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Response status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log(result);
+  } catch (error) {
+    console.error("Fout bij ophalen:", error.message);
+  }
+}
+
+async function getLijnRealTimeData() {
+  const url = "https://api.delijn.be/gtfs/v3/realtime?json&tripId=3_31_20251011_0815_HEEN";
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Ocp-Apim-Subscription-Key": "348c080b6d154d0691258ebd5778eed4", 
         "Accept": "application/json"
       }
     });
@@ -65,3 +111,4 @@ async function getLijnHalteData() {
 }
 
 getLijnHalteData()
+getLijnRouteData()
