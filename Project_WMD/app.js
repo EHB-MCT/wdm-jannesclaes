@@ -41,7 +41,7 @@ async function getLijnHalteData() {
     const response = await fetch(url, {
       method: "GET",
       headers: {
-        "Ocp-Apim-Subscription-Key": "e0e62df8f3514026b63deb400729c080", // <-- zet je echte key hier
+        "Ocp-Apim-Subscription-Key": "e0e62df8f3514026b63deb400729c080",
         "Accept": "application/json"
       }
     });
@@ -80,11 +80,6 @@ async function getLijnRitData() {
 
     console.log("HEEN ritten:", heenRitten);
 
-    // Als je bv. enkel de bestemmingen wil tonen:
-    heenRitten.forEach((rit) => {
-      console.log(heenRitten);
-    });
-    console.log(result);
   } catch (error) {
     console.error("Fout bij ophalen:", error.message);
   }
