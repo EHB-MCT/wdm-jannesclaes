@@ -58,3 +58,20 @@ async function getLijnHalteData() {
 }
 
 getLijnHalteData()
+
+const options ={
+  maximumAge: 0,
+  enableHighAccuracy: false,
+  timeout: 15000, 
+}
+
+const succes = (pos) => {
+  const coords = pos.coords;
+  console.log(coords)
+}
+
+const error = (err) => {
+  console.log(err);
+}
+
+navigator.geolocation.getCurrentPosition(succes, error, options)
