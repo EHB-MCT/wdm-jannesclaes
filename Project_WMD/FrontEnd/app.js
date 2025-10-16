@@ -40,6 +40,22 @@ submitBtn.onclick =function(){
     console.log(`je reis met de ${transport} van ${inputDuration.value} kilometer duurde ${inputDistance.value} minuten.`)
 }
 
+//geolocation constanten
+const options ={
+  maximumAge: 0,
+  enableHighAccuracy: false,
+  timeout: 15000, 
+}
+
+const succes = (pos) => {
+  const coords = pos.coords;
+  console.log(coords)
+}
+
+const error = (err) => {
+  console.log(err);
+}
+
 
 async function getLijnHalteData() {
   const url = "https://api.delijn.be/DLZoekOpenData/v1/zoek/haltes/*?huidigePositie=51.0299814,4.9740799&maxAantalHits=3";
@@ -110,5 +126,32 @@ async function getLijnRealTimeData() {
   }
 }
 
+async function getLocationCoords() {
+  const url = "https://api.geoapify.com/v1/geocode/search?text=Leuven%20Vital&20Decosterstraat%2080&apiKey=fc7e84bdd71b4433a13395f78744f923";
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Accept": "application/json"
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Response status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log(result);
+  } catch (error) {
+    console.error("Fout bij ophalen:", error.message);
+  }
+}
+
+
+navigator.geolocation.getCurrentPosition(succes, error, options)
+
+
+getLocationCoords()
 getLijnHalteData()
 getLijnRouteData()
