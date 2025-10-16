@@ -36,8 +36,13 @@ walk.onclick = function(){
     transport = "benen"
 };
 
-submitBtn.onclick =function(){
+submitBtn.onclick = function(event){
+    event.preventDefault()
+    navigator.geolocation.getCurrentPosition(succes, error, options)
     console.log(`je reis met de ${transport} van ${inputDuration.value} kilometer duurde ${inputDistance.value} minuten.`)
+    getLocationCoords()
+    getLijnHalteData()
+    getLijnRouteData()
 }
 
 //geolocation constanten
@@ -127,7 +132,9 @@ async function getLijnRealTimeData() {
 }
 
 async function getLocationCoords() {
-  const url = "https://api.geoapify.com/v1/geocode/search?text=Leuven%20Vital&20Decosterstraat%2080&apiKey=fc7e84bdd71b4433a13395f78744f923";
+  const destination = document.getElementById("inputDestination")
+  const givenDestination = destination.value
+  const url = `https://api.geoapify.com/v1/geocode/search?text=${givenDestination}&apiKey=fc7e84bdd71b4433a13395f78744f923`;
 
   try {
     const response = await fetch(url, {
@@ -142,16 +149,16 @@ async function getLocationCoords() {
     }
 
     const result = await response.json();
-    console.log(result);
+    firstLocation(result);
+
+
   } catch (error) {
     console.error("Fout bij ophalen:", error.message);
   }
 }
 
-
-navigator.geolocation.getCurrentPosition(succes, error, options)
-
-
-getLocationCoords()
-getLijnHalteData()
-getLijnRouteData()
+function firstLocation(locations){
+  console.log(locations)
+  let location = locations.features[0]
+  console.log(location)
+}
