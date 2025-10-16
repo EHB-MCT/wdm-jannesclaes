@@ -39,7 +39,6 @@ walk.onclick = function(){
 submitBtn.onclick = function(event){
     event.preventDefault()
     navigator.geolocation.getCurrentPosition(succes, error, options)
-    console.log(`je reis met de ${transport} van ${inputDuration.value} kilometer duurde ${inputDistance.value} minuten.`)
     getLocationCoords()
     getLijnHalteData()
     getLijnRouteData()
@@ -55,6 +54,7 @@ const options ={
 const succes = (pos) => {
   const coords = pos.coords;
   console.log(coords)
+  currentLocation = `${coords.latitude}, ${coords.longitude}`
 }
 
 const error = (err) => {
@@ -159,6 +159,12 @@ async function getLocationCoords() {
 
 function firstLocation(locations){
   console.log(locations)
-  let location = locations.features[0]
-  console.log(location)
+  let locationLa = locations.features[0].bbox[1]
+  let locationLo = locations.features[0].bbox[0]
+  let coordsDestination = `${locationLa}, ${locationLo}`
+  logTransportInfo(currentLocation, coordsDestination)
+}
+
+function logTransportInfo(startPoint, destination){
+  console.log(`je reis met de ${transport} van ${inputDuration.value} kilometer duurde ${inputDistance.value} minuten. Je vertrekt van ${startPoint} en gaat naar ${destination}.`)
 }
