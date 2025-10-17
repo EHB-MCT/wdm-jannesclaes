@@ -160,7 +160,7 @@ function firstLocation(locations){
   let locationLa = locations.features[0].bbox[1]
   let locationLo = locations.features[0].bbox[0]
   let coordsDestination = `${locationLa}, ${locationLo}`
-  getLijnRouteDataCurrentPosition(locationLo, locationLa)
+  //getLijnRouteDataCurrentPosition(locationLo, locationLa)
   logTransportInfo(currentLocation, coordsDestination)
 }
 
