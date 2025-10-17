@@ -8,6 +8,7 @@ const walk = document.getElementById("walkBtn")
 
 const submitBtn = document.getElementById("submitBtn")
 
+let coords 
 let transport = ""
 
 car.onclick = function(){
@@ -52,15 +53,16 @@ const options ={
 const succes = (pos) => {
   const coords = pos.coords;
   console.log(coords)
-  currentLocation = `${coords.latitude}, ${coords.longitude}`
   getLijnHalteData(coords.latitude, coords.longitude)
+  getLijnRouteData(coords.latitude, coords.longitude)
+  //currentLocation = `${coords.latitude}, ${coords.longitude}`
 }
 
 const error = (err) => {
   console.log(err);
 }
 
-
+//haltes in de buurt van huidige locatie zoeken
 async function getLijnHalteData(desLong, desLat) {
   const url = `https://api.delijn.be/DLZoekOpenData/v1/zoek/haltes/*?huidigePositie=${desLong},${desLat}&maxAantalHits=3`;
 
@@ -84,7 +86,8 @@ async function getLijnHalteData(desLong, desLat) {
   }
 }
 
-async function getLijnRouteDataCurrentPosition(desLong, desLat) {
+async function getLijnRouteData(desLong, desLat) {
+  console.log("testPoint")
   const url = `https://api.delijn.be/DLZoekOpenData/v1/zoek/lijnrichtingen/*?huidigePositie=${desLong},${desLat}&maxAantalHits=3`;
 
   try {
@@ -101,11 +104,12 @@ async function getLijnRouteDataCurrentPosition(desLong, desLat) {
     }
 
     const result = await response.json();
-    console.log("route"+result);
+    console.log(result);
   } catch (error) {
     console.error("Fout bij ophalen:", error.message);
   }
 }
+
 
 async function getLijnRealTimeData() {
   const url = "https://api.delijn.be/gtfs/v3/realtime?json&tripId=3_31_20251011_0815_HEEN";
@@ -160,10 +164,9 @@ function firstLocation(locations){
   let locationLa = locations.features[0].bbox[1]
   let locationLo = locations.features[0].bbox[0]
   let coordsDestination = `${locationLa}, ${locationLo}`
-  //getLijnRouteDataCurrentPosition(locationLo, locationLa)
   logTransportInfo(currentLocation, coordsDestination)
 }
 
 function logTransportInfo(startPoint, destination){
-  console.log(`je reis met de ${transport} van ${inputDuration.value} kilometer duurde ${inputDistance.value} minuten. Je vertrekt van ${startPoint} en gaat naar ${destination}.`)
+  console.log(`je reisje met de ${transport} van ${inputDuration.value} kilometer duurde ${inputDistance.value} minuten. Je vertrekt van ${startPoint} en gaat naar ${destination}.`)
 }
