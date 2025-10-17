@@ -40,8 +40,6 @@ submitBtn.onclick = function(event){
     event.preventDefault()
     navigator.geolocation.getCurrentPosition(succes, error, options)
     getLocationCoords()
-    getLijnHalteData()
-    getLijnRouteData()
 }
 
 //geolocation constanten
@@ -55,6 +53,7 @@ const succes = (pos) => {
   const coords = pos.coords;
   console.log(coords)
   currentLocation = `${coords.latitude}, ${coords.longitude}`
+  getLijnHalteData(coords.latitude, coords.longitude)
 }
 
 const error = (err) => {
@@ -62,8 +61,8 @@ const error = (err) => {
 }
 
 
-async function getLijnHalteData() {
-  const url = "https://api.delijn.be/DLZoekOpenData/v1/zoek/haltes/*?huidigePositie=51.0299814,4.9740799&maxAantalHits=3";
+async function getLijnHalteData(desLong, desLat) {
+  const url = `https://api.delijn.be/DLZoekOpenData/v1/zoek/haltes/*?huidigePositie=${desLong},${desLat}&maxAantalHits=3`;
 
   try {
     const response = await fetch(url, {
@@ -85,8 +84,8 @@ async function getLijnHalteData() {
   }
 }
 
-async function getLijnRouteData() {
-  const url = "https://api.delijn.be/DLZoekOpenData/v1/zoek/lijnrichtingen/*?huidigePositie=51.0299814,4.9740799&maxAantalHits=3";
+async function getLijnRouteDataCurrentPosition(desLong, desLat) {
+  const url = `https://api.delijn.be/DLZoekOpenData/v1/zoek/lijnrichtingen/*?huidigePositie=${desLong},${desLat}&maxAantalHits=3`;
 
   try {
     const response = await fetch(url, {
@@ -102,7 +101,7 @@ async function getLijnRouteData() {
     }
 
     const result = await response.json();
-    console.log(result);
+    console.log("route"+result);
   } catch (error) {
     console.error("Fout bij ophalen:", error.message);
   }
@@ -149,8 +148,7 @@ async function getLocationCoords() {
     }
 
     const result = await response.json();
-    firstLocation(result);
-
+    firstLocation(result)
 
   } catch (error) {
     console.error("Fout bij ophalen:", error.message);
@@ -158,10 +156,11 @@ async function getLocationCoords() {
 }
 
 function firstLocation(locations){
-  console.log(locations)
+  console.log(locations.features[0])
   let locationLa = locations.features[0].bbox[1]
   let locationLo = locations.features[0].bbox[0]
   let coordsDestination = `${locationLa}, ${locationLo}`
+  getLijnRouteDataCurrentPosition(locationLo, locationLa)
   logTransportInfo(currentLocation, coordsDestination)
 }
 
