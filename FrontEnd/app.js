@@ -1,4 +1,4 @@
-console.log("Hello World")
+console.log("Hello")
 
 const car = document.getElementById("carBtn")
 const bike = document.getElementById("bikeBtn")
@@ -55,7 +55,7 @@ const succes = (pos) => {
   console.log(coords)
   getLijnHalteData(coords.latitude, coords.longitude)
   getLijnRouteData(coords.latitude, coords.longitude)
-  //currentLocation = `${coords.latitude}, ${coords.longitude}`
+  currentLocation = `${coords.latitude}, ${coords.longitude}`
 }
 
 const error = (err) => {

@@ -1,9 +1,9 @@
-version: '3.8'
-
 services:
   front_end:
     build:
       context: ./FrontEnd
       dockerfile: Dockerfile
     ports:
-      - 8080:80
+      - 1234:80
+    volumes:
+      - . /FrontEnd:/app
