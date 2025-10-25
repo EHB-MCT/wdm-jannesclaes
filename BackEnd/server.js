@@ -1,11 +1,15 @@
 const express = require ("express");
 const mongoose = require('mongoose');
+const cors = require('cors');
 const User = require('./models/User');
 const Trip = require('./models/Trip')
 
 const app = express();
 
 const DB_URI = 'mongodb+srv://JannesClaes:Legolego.1407@cluster0.enmiw.mongodb.net/next_trip_db';
+
+
+app.use(cors());    
 
 app.use(express.json());
 
@@ -51,6 +55,7 @@ app.post('/api/createUser', async (req, res) => {
 });
 
 app.post('/api/createTrip', async (req, res) => {
+    console.log("REQ BODY BACKEND:", req.body);
     try {
         const loggedInUserId = '68f4bb94fcad753e0336415c'; 
 

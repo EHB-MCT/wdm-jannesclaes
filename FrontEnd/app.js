@@ -13,34 +13,36 @@ let transport = ""
 
 car.onclick = function(){
     //console.log("auto");
-    transport = "auto"
+    transport = "Auto"
 };
 
 bike.onclick = function(){
     //console.log("fiets");
-    transport = "fiets"
+    transport = "Fiets"
 };
 
 train.onclick = function(){
     //console.log("trein");
-    transport = "trein"
+    transport = "Trein"
 };
 
 bus.onclick = function(){
     //console.log("trein");
-    transport = "bus"
+    transport = "Bus"
 
 };
 
 walk.onclick = function(){
     //console.log("te voet");
-    transport = "benen"
+    transport = "Benen"
 };
 
 submitBtn.onclick = function(event){
-    event.preventDefault()
-    navigator.geolocation.getCurrentPosition(succes, error, options)
-    getLocationCoords()
+    event.preventDefault();
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        succes(pos);
+        await getLocationCoords();
+      }, error, options);
 }
 
 //geolocation constanten
@@ -159,14 +161,50 @@ async function getLocationCoords() {
   }
 }
 
+let tripData = {};
+
 function firstLocation(locations){
   console.log(locations.features[0])
   let locationLa = locations.features[0].bbox[1]
   let locationLo = locations.features[0].bbox[0]
   let coordsDestination = `${locationLa}, ${locationLo}`
-  logTransportInfo(currentLocation, coordsDestination)
+  tripData = {
+    "userId": "65f0a8c2d1e4f7b6c8a9d0e3",
+    "location_a": `${currentLocation}`,
+    "location_b": `${coordsDestination}`,
+    "vehicle": `${transport}`,
+    "duration": Number(inputDuration.value),
+    "distance": Number(inputDistance.value)
+  };
+  console.log(tripData)
+  createTrip(tripData)
 }
 
-function logTransportInfo(startPoint, destination){
-  console.log(`je reisje met de ${transport} van ${inputDuration.value} kilometer duurde ${inputDistance.value} minuten. Je vertrekt van ${startPoint} en gaat naar ${destination}.`)
+async function createTrip(trip) {
+  const createTrip = JSON.stringify(trip)
+  console.log("STRINGIFIED BODY:", createTrip);
+  const url = `http://localhost:3000/api/createTrip`;
+  console.log(trip)
+  
+  console.log(createTrip)
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: createTrip
+    });
+
+    if (!response.ok) {
+      throw new Error(`Response status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log("Trip succesvol aangemaakt:", result);
+
+  } catch (error) {
+    console.error("Fout bij aanmaken van trip:", error.message);
+  }
 }
