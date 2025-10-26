@@ -6,6 +6,8 @@ const train = document.getElementById("nmbsBtn")
 const bus = document.getElementById("deLijnBtn")
 const walk = document.getElementById("walkBtn")
 
+let userName = document.getElementById("inputUsername")
+
 const submitBtn = document.getElementById("submitBtn")
 
 let coords 
@@ -39,6 +41,7 @@ walk.onclick = function(){
 
 submitBtn.onclick = function(event){
     event.preventDefault();
+      console.log(userName)
       navigator.geolocation.getCurrentPosition(async (pos) => {
         succes(pos);
         await getLocationCoords();
@@ -64,7 +67,6 @@ const error = (err) => {
   console.log(err);
 }
 
-//haltes in de buurt van huidige locatie zoeken
 async function getLijnHalteData(desLong, desLat) {
   const url = `https://api.delijn.be/DLZoekOpenData/v1/zoek/haltes/*?huidigePositie=${desLong},${desLat}&maxAantalHits=3`;
 
@@ -206,5 +208,31 @@ async function createTrip(trip) {
 
   } catch (error) {
     console.error("Fout bij aanmaken van trip:", error.message);
+  }
+}
+
+async function getUser(username) {
+  const url = `http://localhost:3000/api/getUser/${username}`;
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Response status: ${response.status}`);
+    }
+
+    const result = await response.json(); // <-- hier ging het mis
+    console.log(result.user._id)
+    let userId = result.user._id
+    return userId
+
+  } catch (error) {
+    console.error("Fout bij ophalen gebruiker:", error.message);
   }
 }
