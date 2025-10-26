@@ -55,7 +55,6 @@ app.post('/api/createUser', async (req, res) => {
 });
 
 app.post('/api/createTrip', async (req, res) => {
-    console.log("REQ BODY BACKEND:", req.body);
     try {
         const loggedInUserId = '68f4bb94fcad753e0336415c'; 
 
@@ -73,6 +72,28 @@ app.post('/api/createTrip', async (req, res) => {
         res.status(201).json(savedTrip);
     } catch (error) {
         res.status(400).json({ message: error.message });
+    }
+});
+
+app.get('/api/getUser/:username', async (req, res) => {
+    try {
+        const { username } = req.params;
+
+        const user = await User.findOne({ username: username });
+
+        if (!user) {
+            return res.status(404).json({ message: "Gebruiker niet gevonden" });
+        }
+
+        res.status(200).json({ 
+            user: user 
+        });
+
+    } catch (error) {
+        res.status(500).json({ 
+            message: 'Er is een interne serverfout opgetreden', 
+            error: error.message 
+        });
     }
 });
 
