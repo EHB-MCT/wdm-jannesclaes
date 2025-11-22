@@ -1,33 +1,145 @@
-.btn {
-    width: 35vw;
-    height: 25vw;
-    margin: 0.5vw;
+:root {
+    --red: #ff2e1f; 
+    --bg: #e6e6e6;    
+    --text-white: #ffffff;
+    --gap-size: 4px;  
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg);
+    font-family: 'Roboto Mono', monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+#wrapper {
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
 }
 
 #dashboard {
+    background-color: transparent;
     display: flex;
-    flex-wrap: wrap;
     flex-direction: column;
+    gap: var(--gap-size);
 }
 
 #buttons {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); 
+    gap: var(--gap-size);
 }
+
+.btn {
+    background-color: var(--red);
+    color: var(--text-white);
+    border: none;
+    padding: 20px;
+    font-family: 'Saira Stencil One', sans-serif; 
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-align: left;
+    position: relative;
+    transition: transform 0.1s, filter 0.2s;
+}
+
+.btn::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    border: 2px dashed rgba(0,0,0,0.1); 
+    pointer-events: none;
+}
+
+.btn:hover {
+    filter: brightness(1.9); 
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+/* De actieve state (bijv. als je erop klikt) - optioneel */
+.btn.active {
+    background-color: var(--text-white);
+    color: var(--red);
+}
+
+#inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--gap-size);
+    margin-top: 10px;
+}
+
+#inputs span {
+    background-color: var(--red);
+    padding: 15px;
+    display: flex;
+    flex-direction: column-reverse; 
+    position: relative;
+}
+
+
+#inputs p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    margin-top: 5px;
+    font-weight: bold;
+}
+
+
+#inputs input {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid var(--text-white);
+    color: var(--text-white);
+    font-family: 'Saira Stencil One', sans-serif;
+    font-size: 1.5rem;
+    width: 100%;
+    outline: none;
+}
+
+#inputs input:focus {
+    border-bottom-color: #000;
+}
+
 
 #submitBtn {
-    width: 10vw;
-}
-
-#buttons, #inputs {
-    margin: 2vh 0;
-}
-
-span {
+    background-color: var(--text-white);
+    color: var(--red);
+    border: 4px solid var(-- red);
+    padding: 20px;
+    font-family: 'Saira Stencil One', sans-serif;
+    font-size: 2rem;
+    text-transform: uppercase;
+    margin-top: 10px;
+    cursor: pointer;
     display: flex;
-    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
 }
 
-input {
-    height: 20px;
+#submitBtn::after {
+    content: '→'; 
+    font-size: 2.5rem;
+    line-height: 0.8;
+}
+
+#submitBtn:hover {
+    background-color: var(--red);
+    color: var(--text-white);
+    border-color: var(--text-white);
 }

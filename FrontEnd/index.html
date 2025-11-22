@@ -7,39 +7,42 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="dashboard">
-        <div id="buttons">        
-            <button class="btn" id="carBtn">auto</button>
-            <button class="btn" id="bikeBtn">fiets</button>
-            <button class="btn" id="nmbsBtn">NMBS</button>
-            <button class="btn" id="deLijnBtn">De Lijn</button>
-            <button class="btn" id="walkBtn">te voet</button>
+    <div id="wrapper">
+        <div id="dashboard">
+            <div id="buttons">        
+                <button class="btn" id="carBtn">auto</button>
+                <button class="btn" id="bikeBtn">fiets</button>
+                <button class="btn" id="nmbsBtn">NMBS</button>
+                <button class="btn" id="deLijnBtn">De Lijn</button>
+                <button class="btn" id="walkBtn">te voet</button>
+            </div>
+
+            <div id="inputs">
+                <span>
+                    <input type="text" id="inputUsername">
+                    <p>username</p>
+                </span>
+                <span>
+                    <input type="text" id="inputDestination">
+                    <p>bestemming</p>
+                </span>
+                <span>
+                    <input type="number" min="1" value="1" id="inputDistance">
+                    <p>kilometer</p>
+                </span>
+
+                <span>
+                    <input type="number" min="1" value="1" id="inputDuration">
+                    <p>minuten</p>
+                </span>
+                
+            </div>
+
+            <button id="submitBtn">submit</button>
+
         </div>
-
-        <div id="inputs">
-            <span>
-                <input type="text" id="inputUsername">
-                <p>Username</p>
-            </span>
-            <span>
-                <input type="text" id="inputDestination">
-                <p>bestemming</p>
-            </span>
-            <span>
-                <input type="number" min="1" value="1" id="inputDistance">
-                <p>kilometer</p>
-            </span>
-
-            <span>
-                <input type="number" min="1" value="1" id="inputDuration">
-                <p>minuten</p>
-            </span>
-            
-        </div>
-
-        <button id="submitBtn">submit</button>
-
     </div>
+    
 
 
     
