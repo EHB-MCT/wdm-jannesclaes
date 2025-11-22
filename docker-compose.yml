@@ -1,0 +1,18 @@
+services:
+  front_end:
+    build:
+      context: ./FrontEnd
+      dockerfile: Dockerfile
+    ports:
+      - 1234:80
+    volumes:
+      - . /FrontEnd:/app
+
+  back_end:
+    build:
+      context: ./BackEnd
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
+    volumes:
+      - . /BackEnd:/server
