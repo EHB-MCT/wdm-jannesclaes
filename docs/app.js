@@ -212,7 +212,7 @@ async function createTrip(trip) {
 }
 
 async function getUser(username) {
-  const url = `http://localhost:3000/api/getUser/${username}`;
+  const url = `https://wdm-jannesclaes-1.onrender.com/${username}`;
 
   try {
     const response = await fetch(url, {
