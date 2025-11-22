@@ -185,7 +185,7 @@ function firstLocation(locations){
 async function createTrip(trip) {
   const createTrip = JSON.stringify(trip)
   console.log("STRINGIFIED BODY:", createTrip);
-  const url = `http://localhost:3000/api/createTrip`;
+  const url = `https://wdm-jannesclaes-1.onrender.com/api/createTrip`;
   console.log(trip)
   
   console.log(createTrip)
