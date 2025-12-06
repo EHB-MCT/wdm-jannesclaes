@@ -1,3 +1,8 @@
+// Load environment variables
+const DELIJN_API_KEY = "e0e2df8f3514026b63deb400729c080";
+const DELIJN_REALTIME_API_KEY = "348c080b6d154d0691258ebd5778eed4";
+const GEOAPIFY_API_KEY = "fc7e84bdd71b4433a13395f78744f923";
+
 console.log("Hello")
 
 const car = document.getElementById("carBtn")
@@ -121,8 +126,8 @@ async function getLijnRealTimeData() {
   try {
     const response = await fetch(url, {
       method: "GET",
-      headers: {
-        "Ocp-Apim-Subscription-Key": "348c080b6d154d0691258ebd5778eed4", 
+headers: {
+        "Ocp-Apim-Subscription-Key": DELIJN_REALTIME_API_KEY, 
         "Accept": "application/json"
       }
     });
@@ -141,7 +146,7 @@ async function getLijnRealTimeData() {
 async function getLocationCoords() {
   const destination = document.getElementById("inputDestination")
   const givenDestination = destination.value
-  const url = `https://api.geoapify.com/v1/geocode/search?text=${givenDestination}&apiKey=fc7e84bdd71b4433a13395f78744f923`;
+  const url = `https://api.geoapify.com/v1/geocode/search?text=${givenDestination}&apiKey=${GEOAPIFY_API_KEY}`;
 
   try {
     const response = await fetch(url, {

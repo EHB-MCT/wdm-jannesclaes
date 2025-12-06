@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require ("express");
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -6,7 +7,7 @@ const Trip = require('./models/Trip')
 
 const app = express();
 
-const DB_URI = 'mongodb+srv://JannesClaes:Legolego.1407@cluster0.enmiw.mongodb.net/next_trip_db';
+const DB_URI = process.env.MONGODB_URI;
 
 
 app.use(cors());    
