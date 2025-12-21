@@ -19,6 +19,9 @@ exports.getTrips = async (req, res) => {
             // Maak er een mooi getal van (bijv. 65)
             tripObj.efficiencyScore = Math.round(rawScore * 100);
 
+            // Round duration to remove decimals
+            tripObj.duration = Math.round(trip.duration);
+
             // Het oordeel vellen
             if (tripObj.efficiencyScore > 30) {
                 tripObj.status = "High Performer"; // Elite (Sophie)

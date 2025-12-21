@@ -241,3 +241,51 @@ async function getUser(username) {
     console.error("Fout bij ophalen gebruiker:", error.message);
   }
 }
+
+
+async function loadWMDData() {
+    const tripList = document.getElementById('tripList');
+    tripList.innerHTML = '<p style="text-align:center">Laden...</p>';
+
+    try {
+        // 1. Haal de data op van je nieuwe Backend (Poort 5001)
+        const response = await fetch('http://localhost:5001/api/trips');
+        
+        if (!response.ok) throw new Error("Server reageert niet");
+
+        const trips = await response.json();
+        
+        // 2. Maak de lijst leeg
+        tripList.innerHTML = '';
+
+        // 3. Loop door de data en maak kaartjes
+        // We draaien de array om (.reverse) zodat de nieuwste bovenaan staat
+        trips.reverse().forEach(trip => {
+            const card = document.createElement('div');
+            
+            // Voeg de class 'red' of 'green' toe op basis van de backend data
+            card.className = `trip-card ${trip.color}`;
+            
+            // De inhoud van het kaartje
+            card.innerHTML = `
+                <span class="score-badge" style="color:${trip.color === 'green' ? '#2ecc71' : '#ff2e1f'}">
+                    ${trip.efficiencyScore}
+                </span>
+                <strong>${trip.userId ? trip.userId.username : 'Onbekend'}</strong><br>
+                <small>${trip.vehicle} - ${trip.distance}km in ${trip.duration}min</small><br>
+                <b style="color:${trip.color === 'green' ? '#2ecc71' : '#ff2e1f'}">
+                    ${trip.status}
+                </b>
+            `;
+            
+            tripList.appendChild(card);
+        });
+
+    } catch (error) {
+        console.error("Fout:", error);
+        tripList.innerHTML = '<p style="color:red; text-align:center">Kan server niet bereiken.<br>Check of node server.js draait.</p>';
+    }
+}
+
+// 4. Roep deze functie direct aan als de pagina laadt
+loadWMDData();

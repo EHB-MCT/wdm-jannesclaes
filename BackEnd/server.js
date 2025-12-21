@@ -22,7 +22,7 @@ app.get('/', (req, res) => {
     res.send('API is running... WMD Project');
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
     console.log(`🚀 Server draait op poort ${PORT}`);
 });

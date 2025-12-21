@@ -13,9 +13,10 @@ services:
       context: ./BackEnd
       dockerfile: Dockerfile
     ports:
-      - 3000:3000
+      - 5001:5001
     volumes:
-      - . /BackEnd:/server
+      - ./BackEnd:/server
+      - /server/node_modules
   
   mongodb:
     image: mongo:latest
