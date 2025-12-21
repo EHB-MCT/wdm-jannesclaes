@@ -1,38 +1,31 @@
 version: '3.8'
 
 services:
-  # 1. Frontend (HTML/CSS/JS)
   front_end:
     build:
-      context: ./FrontEnd
+      context: ./FrontEnd   # <--- TERUG NAAR FRONTEND
       dockerfile: Dockerfile
     ports:
-      - "1234:80"
+      - "1234:80"           # Je frontend blijft op poort 1234
     volumes:
-      # We mappen jouw mapje naar de standaard Nginx map
-      # Zo zie je wijzigingen in HTML direct na een refresh
       - ./FrontEnd:/usr/share/nginx/html
 
-  # 2. Backend (Node.js API)
   back_end:
     build:
       context: ./BackEnd
       dockerfile: Dockerfile
     container_name: wmd_backend
     ports:
-      - "5050:5050"  # We gebruiken nu poort 5050
+      - "5050:5050"         # We gebruiken poort 5050
     environment:
       - PORT=5050
-      # CRUCIAAL: Hier vertellen we de backend dat hij 'wmd_mongo' moet bellen
       - MONGO_URI=mongodb://wmd_mongo:27017/wmd_project
     volumes:
-      # Zorg dat dit pad matcht met WORKDIR in je Dockerfile (meestal /usr/src/app)
       - ./BackEnd:/usr/src/app
       - /usr/src/app/node_modules
     depends_on:
       - mongodb
 
-  # 3. Database (MongoDB)
   mongodb:
     image: mongo:latest
     container_name: wmd_mongo
