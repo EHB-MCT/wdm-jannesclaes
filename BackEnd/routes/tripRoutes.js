@@ -1,9 +1,13 @@
 const express = require('express');
 const router = express.Router();
-// Hier halen we de code uit stap 1 op
-const { getTrips } = require('../controllers/tripController');
+const { getTrips, createTrip } = require('../controllers/tripController');
 
-// Als iemand naar '/' gaat, voer de functie uit
+console.log("🛠️ Trip Routes worden geladen..."); // <-- DEZE REGEL IS NIEUW
+
+// GET: Lijst ophalen
 router.get('/', getTrips);
+
+// POST: Nieuwe rit maken (DIT IS DE BELANGRIJKE)
+router.post('/', createTrip);
 
 module.exports = router;

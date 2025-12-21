@@ -190,7 +190,7 @@ function firstLocation(locations){
 async function createTrip(trip) {
   const createTrip = JSON.stringify(trip)
   console.log("STRINGIFIED BODY:", createTrip);
-  const url = `http://localhost:3000/api/createTrip`;
+  const url = `http://localhost:5050/api/trips`;
   console.log(trip)
   
   console.log(createTrip)
@@ -249,7 +249,7 @@ async function loadWMDData() {
 
     try {
         // 1. Haal de data op van je nieuwe Backend (Poort 5001)
-        const response = await fetch('http://localhost:5001/api/trips');
+        const response = await fetch('http://localhost:5050/api/trips');
         
         if (!response.ok) throw new Error("Server reageert niet");
 

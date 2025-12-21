@@ -1,12 +1,17 @@
-FROM node:18-alpine
+# BackEnd/Dockerfile
+FROM node:18
 
-WORKDIR /server
+WORKDIR /usr/src/app
 
 COPY package*.json ./
 RUN npm install
 
 COPY . .
 
-EXPOSE 5001
+# We gebruiken nodemon zodat je server herstart als je code aanpast
+RUN npm install -g nodemon
 
-CMD ["node", "server.js"]
+EXPOSE 5050
+
+# Start command
+CMD ["nodemon", "server.js"]
