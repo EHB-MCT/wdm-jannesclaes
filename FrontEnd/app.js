@@ -54,9 +54,9 @@ function setupEventListeners() {
     // Trip event listeners
     car.onclick = () => setTransport("Auto");
     bike.onclick = () => setTransport("Fiets");
-    train.onclick = () => setTransport("Openbaar Vervoer");
-    bus.onclick = () => setTransport("Openbaar Vervoer");
-    walk.onclick = () => setTransport("Anders");
+    train.onclick = () => setTransport("NMBS");
+    bus.onclick = () => setTransport("De Lijn");
+    walk.onclick = () => setTransport("Te Voet");
     
     if (submitBtn) {
         submitBtn.onclick = submitTrip;
@@ -389,12 +389,16 @@ async function submitTrip(event) {
         // Calculate distance and round to 1 decimal place
         const calculatedDistanceRounded = Math.round(calculatedDistance * 10) / 10;
         
-
-
+        // Get AI prediction for optimal trip details
+        const prediction = await getTripPrediction(destination, calculatedDistanceRounded);
+        
+        // Show AI prediction to user
+        const userChoice = await showPredictionDialog(prediction);
+        
         const tripData = {
-            vehicle: transport,
+            vehicle: userChoice.vehicle,
             distance: calculatedDistanceRounded,
-            duration: Number(document.getElementById("inputDuration").value),
+            duration: userChoice.duration / 60, // Convert minutes to hours for backend
             location_a: "Thuis",
             location_b: destination
         };
@@ -704,4 +708,153 @@ function clearAllFilters() {
     document.getElementById('userFilter').value = 'all';
     
     displayTrips(allTrips);
+}
+
+// AI Prediction Functions
+async function getTripPrediction(destination, distance) {
+    try {
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        
+        const response = await fetch(`${BACKEND_URL}/api/predict/trip?destination=${encodeURIComponent(destination)}&distance=${distance}`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+            return await response.json();
+        } else {
+            console.warn('Prediction service unavailable, using fallback');
+            return getFallbackPrediction(destination, distance);
+        }
+    } catch (error) {
+        console.error('Prediction failed:', error);
+        return getFallbackPrediction(destination, distance);
+    }
+}
+
+function getFallbackPrediction(destination, distance) {
+    let vehicle = 'Auto';
+    let duration = 1;
+    
+    if (distance < 2) {
+        vehicle = 'Te Voet';
+        duration = distance / 5;
+    } else if (distance < 10) {
+        vehicle = 'Fiets';
+        duration = distance / 15;
+    } else if (distance < 30) {
+        vehicle = 'NMBS';
+        duration = distance / 8;
+    } else {
+        vehicle = 'Auto';
+        duration = distance / 40;
+    }
+    
+    const score = (distance / duration) * 100;
+    
+    return {
+        predictedVehicle: vehicle,
+        predictedDuration: Math.round(duration * 60), // Convert to minutes for UI
+        predictedDestination: destination,
+        predictedScore: Math.round(score),
+        confidence: 30,
+        reasoning: 'Fallback prediction based on distance rules'
+    };
+}
+
+async function showPredictionDialog(prediction) {
+    return new Promise((resolve) => {
+        // Create modal overlay
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        `;
+        
+        // Create prediction card
+        const card = document.createElement('div');
+        card.style.cssText = `
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        `;
+        
+        const scoreColor = prediction.predictedScore > 30 ? '#2ecc71' : '#ff2e1f';
+        
+        card.innerHTML = `
+            <h3 style="margin: 0 0 15px 0; color: #333;">🤖 AI Trip Prediction</h3>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <strong>Transport:</strong>
+                    <span>${prediction.predictedVehicle}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <strong>Duration:</strong>
+                    <span>${prediction.predictedDuration} min</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <strong>Expected Score:</strong>
+                    <span style="color: ${scoreColor}; font-weight: bold;">${prediction.predictedScore}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <strong>Confidence:</strong>
+                    <span>${prediction.confidence}%</span>
+                </div>
+                <div style="margin-top: 10px; font-size: 0.9em; color: #666; font-style: italic;">
+                    ${prediction.reasoning}
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button id="acceptPrediction" style="flex: 1; background: #2ecc71; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer;">
+                    Use AI Suggestion
+                </button>
+                <button id="rejectPrediction" style="flex: 1; background: #95a5a6; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer;">
+                    Use My Choice
+                </button>
+            </div>
+        `;
+        
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+        
+        // Handle user choice
+        document.getElementById('acceptPrediction').addEventListener('click', () => {
+            document.body.removeChild(overlay);
+            resolve({
+                vehicle: prediction.predictedVehicle,
+                duration: prediction.predictedDuration
+            });
+        });
+        
+        document.getElementById('rejectPrediction').addEventListener('click', () => {
+            document.body.removeChild(overlay);
+            // Use user's currently selected transport and duration
+            const userDuration = document.getElementById("inputDuration").value;
+            resolve({
+                vehicle: transport || 'Car',
+                duration: parseInt(userDuration)
+            });
+        });
+        
+        // Close on overlay click
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                document.body.removeChild(overlay);
+                resolve({
+                    vehicle: transport || 'Car',
+                    duration: parseInt(document.getElementById("inputDuration").value)
+                });
+            }
+        });
+    });
 }

@@ -34,5 +34,17 @@ services:
     volumes:
       - mongo-data:/data/db
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: wmd_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    pull_policy: always
+    tty: true
+    restart: unless-stopped
+
 volumes:
   mongo-data:
+  ollama-data:
