@@ -587,40 +587,67 @@ function displayUserPerformance(trips) {
         userStats[username].vehicles[trip.vehicle]++;
     });
     
-    // Calculate average scores and identify low performing users
-    const lowPerformingUsers = [];
+    // Calculate average scores and performance levels
+    const allUsers = [];
     
     Object.keys(userStats).forEach(username => {
         const stats = userStats[username];
         stats.averageScore = Math.round(stats.totalScore / stats.totalTrips);
         stats.lowPerformingPercentage = Math.round((stats.lowPerformingTrips / stats.totalTrips) * 100);
         
-        // User is low performing if >70% of trips are low value
+        // Determine performance level
+        let performanceLevel, badgeColor, badgeText;
         if (stats.lowPerformingPercentage > 70) {
-            lowPerformingUsers.push({ username, ...stats });
+            performanceLevel = 'SLECHT';
+            badgeColor = '#ff2e1f';
+        } else if (stats.lowPerformingPercentage > 30) {
+            performanceLevel = 'GEMIDDELD';
+            badgeColor = '#ff9500';
+        } else {
+            performanceLevel = 'GOED';
+            badgeColor = '#2ecc71';
         }
+        
+        // Get most used vehicle
+        const mostUsedVehicle = Object.keys(stats.vehicles).reduce(
+            (a, b) => stats.vehicles[a] > stats.vehicles[b] ? a : b
+        );
+        
+        allUsers.push({
+            username,
+            ...stats,
+            performanceLevel,
+            badgeColor,
+            mostUsedVehicle
+        });
     });
     
-    // Display low performing users
-    const summaryDiv = document.getElementById('user-performance-summary');
-    const usersDiv = document.getElementById('low-performing-users');
+    // Sort by average score (highest first) and then by username
+    allUsers.sort((a, b) => {
+        if (b.averageScore !== a.averageScore) {
+            return b.averageScore - a.averageScore;
+        }
+        return a.username.localeCompare(b.username);
+    });
     
-    if (lowPerformingUsers.length > 0 && summaryDiv && usersDiv) {
+    // Display all users
+    const summaryDiv = document.getElementById('user-performance-summary');
+    const usersDiv = document.getElementById('all-users-performance');
+    
+    if (summaryDiv && usersDiv) {
         summaryDiv.style.display = 'block';
-        usersDiv.innerHTML = lowPerformingUsers.map(user => `
+        usersDiv.innerHTML = allUsers.map(user => `
             <div class="user-performance-card">
                 <div class="user-info">
                     <div class="username">${user.username}</div>
                     <div class="stats">
                         ${user.totalTrips} ritten • Gem. score: ${user.averageScore} • 
-                        ${user.lowPerformingPercentage}% slecht presterend
+                        ${user.lowPerformingPercentage}% slecht • Meest gebruikt: ${user.mostUsedVehicle}
                     </div>
                 </div>
-                <div class="performance-badge">SLECHT</div>
+                <div class="performance-badge" style="background-color: ${user.badgeColor};">${user.performanceLevel}</div>
             </div>
         `).join('');
-    } else if (summaryDiv) {
-        summaryDiv.style.display = 'none';
     }
 }
 
