@@ -1,1 +1,0 @@
-Created environment configuration to secure API keys and database credentials by moving hardcoded values to .env file and updating code to use environment variables.

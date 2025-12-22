@@ -53,7 +53,6 @@ function setupEventListeners() {
 
 function setTransport(type) { 
     transport = type; 
-    console.log("Gekozen:", type); 
 }
 
 // Haversine formula to calculate distance between two GPS coordinates in km
@@ -297,11 +296,11 @@ async function submitTrip(event) {
     try {
         // Get user's current location
         const userLocation = await getCurrentLocation();
-        console.log("User location:", userLocation);
+
         
         // Get destination coordinates
         const destinationCoords = await getDestinationCoordinates(destination);
-        console.log("Destination coordinates:", destinationCoords);
+
         
         // Calculate distance using Haversine formula
         const calculatedDistance = calculateDistance(
@@ -312,7 +311,7 @@ async function submitTrip(event) {
         // Calculate distance and round to 1 decimal place
         const calculatedDistanceRounded = Math.round(calculatedDistance * 10) / 10;
         
-        console.log(`Calculated distance: ${calculatedDistanceRounded.toFixed(1)} km`);
+
 
         const tripData = {
             vehicle: transport,
@@ -350,7 +349,7 @@ async function createTrip(trip) {
         const result = await response.json();
         
         if (response.ok) {
-            console.log("✅ Opgeslagen:", result);
+
             loadTrips(); // Lijst verversen
             alert(`Je score: ${result.efficiencyScore}\nOordeel: ${result.status}`);
             
@@ -407,7 +406,7 @@ async function loadTrips() {
             logout();
         }
     } catch(e) { 
-        console.log(e); 
+ 
         logout();
     }
 }
