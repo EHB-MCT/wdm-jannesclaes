@@ -1,13 +1,15 @@
 const Trip = require('../models/Trip');
-const User = require('../models/User');
 
-// @desc    Haal ritten op
-// @route   GET /api/trips
+// @desc    Haal ritten van huidige gebruiker op
+// @route   GET /api/trips (protected)
 exports.getTrips = async (req, res) => {
     try {
-        const trips = await Trip.find().populate('userId', 'username email');
+        // Haal alleen trips van huidige ingelogde gebruiker
+        const trips = await Trip.find({ userId: req.user.id })
+            .populate('userId', 'username')
+            .sort({ createdAt: -1 }); // Nieuwste eerst
         
-        // Voeg scores toe voor weergave (zoals we eerder deden)
+        // Voeg scores toe voor weergave
         const analyzedTrips = trips.map(trip => calculateScore(trip));
         
         res.status(200).json(analyzedTrips);
@@ -16,35 +18,26 @@ exports.getTrips = async (req, res) => {
     }
 };
 
-// @desc    Maak een nieuwe rit aan
-// @route   POST /api/trips
+// @desc    Maak een nieuwe rit aan voor huidige gebruiker
+// @route   POST /api/trips (protected)
 exports.createTrip = async (req, res) => {
     try {
-        const { username, vehicle, distance, duration, location_a, location_b } = req.body;
+        const { vehicle, distance, duration, location_a, location_b } = req.body;
 
-        // 1. Zoek de User erbij (of maak een nieuwe als hij niet bestaat)
-        // Dit lost het probleem op dat IDs veranderen na elke seed
-        let user = await User.findOne({ username: username });
-        if (!user) {
-            user = await User.create({ 
-                username: username, 
-                email: `${username}@test.com` 
-            });
-        }
-
-        // 2. Rit aanmaken
+        // Rit aanmaken met ID van ingelogde gebruiker
         const newTrip = await Trip.create({
-            userId: user._id,
-            location_a: location_a || "Onbekend",
-            location_b: location_b || "Onbekend",
+            userId: req.user.id,
+            location_a: location_a || "Start",
+            location_b: location_b || "Eind",
             vehicle,
             distance,
             duration
         });
 
-        // 3. Stuur de nieuwe rit terug (incl score)
-        // We moeten hem even opnieuw ophalen om de User info te vullen
-        const populatedTrip = await Trip.findById(newTrip._id).populate('userId', 'username');
+        // Haal de nieuwe rit op met user info voor weergave
+        const populatedTrip = await Trip.findById(newTrip._id)
+            .populate('userId', 'username');
+        
         const analyzedTrip = calculateScore(populatedTrip);
 
         res.status(201).json(analyzedTrip);

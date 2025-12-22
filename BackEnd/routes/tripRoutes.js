@@ -1,13 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const { getTrips, createTrip } = require('../controllers/tripController');
+const authenticate = require('../middleware/auth');
 
-console.log("🛠️ Trip Routes worden geladen..."); // <-- DEZE REGEL IS NIEUW
+// GET: Haal trips van huidige gebruiker (protected)
+router.get('/', authenticate, getTrips);
 
-// GET: Lijst ophalen
-router.get('/', getTrips);
-
-// POST: Nieuwe rit maken (DIT IS DE BELANGRIJKE)
-router.post('/', createTrip);
+// POST: Maak nieuwe trip voor huidige gebruiker (protected)
+router.post('/', authenticate, createTrip);
 
 module.exports = router;
