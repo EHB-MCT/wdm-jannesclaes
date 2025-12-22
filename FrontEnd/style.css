@@ -22,8 +22,7 @@ body {
 }
 
 #wrapper {
-    width: 100%;
-    max-width: 400px;
+    width: 80%;
     padding: 20px;
 }
 
@@ -33,6 +32,8 @@ body {
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
+    display: flex;
+    justify-content: center;
 }
 
 #admin-dashboard {
@@ -40,6 +41,8 @@ body {
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    width: 100%;
+    margin: 0 auto;
 }
 
 #admin-header {
@@ -65,27 +68,36 @@ body {
 #admin-dashboard table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 10px;
+    margin: 20px auto;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 #admin-dashboard th {
     background-color: var(--red);
     color: white;
     font-weight: bold;
-    text-align: left;
+    text-align: center;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 #admin-dashboard td, #admin-dashboard th {
-    padding: 12px 8px;
-    border: 1px solid #ddd;
+    padding: 15px 12px;
+    border: 1px solid #e0e0e0;
+    text-align: center;
+    font-size: 14px;
 }
 
 #admin-dashboard tbody tr:nth-child(even) {
-    background-color: #f9f9f9;
+    background-color: #fafafa;
 }
 
 #admin-dashboard tbody tr:hover {
-    background-color: #f5f5f5;
+    background-color: #f0f8ff;
 }
 
 #adminBtn {
@@ -117,6 +129,24 @@ body {
 
 #backToUserBtn:hover, #logoutAdminBtn:hover {
     background-color: #5a6268;
+}
+
+#admin-trip-list {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+    overflow-x: auto;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+#admin-trip-list table {
+    margin: 0;
+}
+
+#admin-trip-list td:first-child,
+#admin-trip-list th:first-child {
+    text-align: left;
 }
 
 #dashboard {
@@ -297,4 +327,103 @@ body {
     float: right;
     font-weight: bold;
     font-size: 1.2rem;
+}
+
+/* Filter Controls */
+#admin-filters {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+#admin-filters select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 14px;
+    min-width: 180px;
+}
+
+#admin-filters select:focus {
+    outline: none;
+    border-color: var(--red);
+    box-shadow: 0 0 0 2px rgba(255, 46, 31, 0.2);
+}
+
+#clearFilters {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+#clearFilters:hover {
+    background-color: #5a6268;
+}
+
+/* User Performance Summary */
+#user-performance-summary {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid var(--red);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+#user-performance-summary h3 {
+    color: var(--red);
+    margin-bottom: 15px;
+}
+
+#low-performing-users {
+    display: grid;
+    gap: 15px;
+}
+
+.user-performance-card {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.user-performance-card .user-info {
+    flex: 1;
+}
+
+.user-performance-card .username {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.user-performance-card .stats {
+    font-size: 12px;
+    color: #666;
+}
+
+.user-performance-card .performance-badge {
+    background: #ff2e1f;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
 }

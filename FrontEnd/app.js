@@ -30,6 +30,7 @@ const submitBtn = document.getElementById("submitBtn");
 
 let transport = "";
 let currentUser = null;
+let allTrips = []; // Store all trips for filtering
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
@@ -59,6 +60,25 @@ function setupEventListeners() {
     
     if (submitBtn) {
         submitBtn.onclick = submitTrip;
+    }
+    
+    // Admin filter event listeners
+    const performanceFilter = document.getElementById('performanceFilter');
+    const vehicleFilter = document.getElementById('vehicleFilter');
+    const userFilter = document.getElementById('userFilter');
+    const clearFilters = document.getElementById('clearFilters');
+    
+    if (performanceFilter) {
+        performanceFilter.addEventListener('change', applyFilters);
+    }
+    if (vehicleFilter) {
+        vehicleFilter.addEventListener('change', applyFilters);
+    }
+    if (userFilter) {
+        userFilter.addEventListener('change', applyFilters);
+    }
+    if (clearFilters) {
+        clearFilters.addEventListener('click', clearAllFilters);
     }
 }
 
@@ -316,48 +336,18 @@ async function loadAllTrips() {
         
         if (res.ok) {
             const trips = await res.json();
-
-            list.innerHTML = "";
-            if (trips.length === 0) {
-                list.innerHTML = "<p>Geen ritten gevonden.</p>";
-            } else {
-                // Create table
-                list.innerHTML = `
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead>
-                            <tr style="background: #f0f0f0;">
-                                <th style="padding: 8px; border: 1px solid #ddd;">Gebruiker</th>
-                                <th style="padding: 8px; border: 1px solid #ddd;">Voertuig</th>
-                                <th style="padding: 8px; border: 1px solid #ddd;">Route</th>
-                                <th style="padding: 8px; border: 1px solid #ddd;">Afstand</th>
-                                <th style="padding: 8px; border: 1px solid #ddd;">Duur</th>
-                                <th style="padding: 8px; border: 1px solid #ddd;">Score</th>
-                                <th style="padding: 8px; border: 1px solid #ddd;">Status</th>
-                                <th style="padding: 8px; border: 1px solid #ddd;">Datum</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${trips.map(t => {
-                                const color = t.color === 'green' ? '#2ecc71' : '#ff2e1f';
-                                return `
-                                    <tr>
-                                        <td style="padding: 8px; border: 1px solid #ddd;">${t.userId ? t.userId.username : 'Onbekend'}</td>
-                                        <td style="padding: 8px; border: 1px solid #ddd;">${t.vehicle}</td>
-                                        <td style="padding: 8px; border: 1px solid #ddd;">${t.location_a} → ${t.location_b}</td>
-                                        <td style="padding: 8px; border: 1px solid #ddd;">${t.distance}km</td>
-                                        <td style="padding: 8px; border: 1px solid #ddd;">${t.duration}min</td>
-                                        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; color: ${color};">${t.efficiencyScore}</td>
-                                        <td style="padding: 8px; border: 1px solid #ddd; color: ${color};">${t.status}</td>
-                                        <td style="padding: 8px; border: 1px solid #ddd;">${new Date(t.createdAt).toLocaleDateString()}</td>
-                                    </tr>
-                                `;
-                            }).join('')}
-                        </tbody>
-                    </table>
-                `;
-            }
+            allTrips = trips; // Store all trips for filtering
+            
+            // Initial display with all data
+            displayTrips(allTrips);
+            
+            // Calculate and display user performance
+            displayUserPerformance(allTrips);
         } else {
-            list.innerHTML = "<p>Fout bij laden van ritten.</p>";
+            const list = document.getElementById('admin-trip-list');
+            if (list) {
+                list.innerHTML = "<p>Fout bij laden van ritten.</p>";
+            }
         }
     } catch(e) { 
         console.error("Error loading admin trips:", e);
@@ -519,4 +509,172 @@ async function deleteTrip(tripId) {
     } catch (error) {
         alert('Kan server niet bereiken');
     }
+}
+
+// Admin Filtering Functions
+function displayTrips(trips) {
+    const list = document.getElementById('admin-trip-list');
+    if (!list) return;
+
+    list.innerHTML = "";
+    if (trips.length === 0) {
+        list.innerHTML = "<p>Geen ritten gevonden met de huidige filters.</p>";
+        return;
+    }
+
+    // Create table
+    list.innerHTML = `
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f0f0f0;">
+                    <th style="padding: 8px; border: 1px solid #ddd;">Gebruiker</th>
+                    <th style="padding: 8px; border: 1px solid #ddd;">Voertuig</th>
+                    <th style="padding: 8px; border: 1px solid #ddd;">Route</th>
+                    <th style="padding: 8px; border: 1px solid #ddd;">Afstand</th>
+                    <th style="padding: 8px; border: 1px solid #ddd;">Duur</th>
+                    <th style="padding: 8px; border: 1px solid #ddd;">Score</th>
+                    <th style="padding: 8px; border: 1px solid #ddd;">Status</th>
+                    <th style="padding: 8px; border: 1px solid #ddd;">Datum</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${trips.map(t => {
+                    const color = t.color === 'green' ? '#2ecc71' : '#ff2e1f';
+                    return `
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #ddd;">${t.userId ? t.userId.username : 'Onbekend'}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd;">${t.vehicle}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd;">${t.location_a} → ${t.location_b}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd;">${t.distance}km</td>
+                            <td style="padding: 8px; border: 1px solid #ddd;">${t.duration}min</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; color: ${color};">${t.efficiencyScore}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; color: ${color};">${t.status}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd;">${new Date(t.createdAt).toLocaleDateString()}</td>
+                        </tr>
+                    `;
+                }).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function displayUserPerformance(trips) {
+    // Calculate user statistics
+    const userStats = {};
+    
+    trips.forEach(trip => {
+        const username = trip.userId ? trip.userId.username : 'Onbekend';
+        if (!userStats[username]) {
+            userStats[username] = {
+                totalTrips: 0,
+                lowPerformingTrips: 0,
+                totalScore: 0,
+                vehicles: {}
+            };
+        }
+        
+        userStats[username].totalTrips++;
+        userStats[username].totalScore += trip.efficiencyScore;
+        
+        if (trip.status === 'Low Value') {
+            userStats[username].lowPerformingTrips++;
+        }
+        
+        // Track vehicle usage
+        if (!userStats[username].vehicles[trip.vehicle]) {
+            userStats[username].vehicles[trip.vehicle] = 0;
+        }
+        userStats[username].vehicles[trip.vehicle]++;
+    });
+    
+    // Calculate average scores and identify low performing users
+    const lowPerformingUsers = [];
+    
+    Object.keys(userStats).forEach(username => {
+        const stats = userStats[username];
+        stats.averageScore = Math.round(stats.totalScore / stats.totalTrips);
+        stats.lowPerformingPercentage = Math.round((stats.lowPerformingTrips / stats.totalTrips) * 100);
+        
+        // User is low performing if >70% of trips are low value
+        if (stats.lowPerformingPercentage > 70) {
+            lowPerformingUsers.push({ username, ...stats });
+        }
+    });
+    
+    // Display low performing users
+    const summaryDiv = document.getElementById('user-performance-summary');
+    const usersDiv = document.getElementById('low-performing-users');
+    
+    if (lowPerformingUsers.length > 0 && summaryDiv && usersDiv) {
+        summaryDiv.style.display = 'block';
+        usersDiv.innerHTML = lowPerformingUsers.map(user => `
+            <div class="user-performance-card">
+                <div class="user-info">
+                    <div class="username">${user.username}</div>
+                    <div class="stats">
+                        ${user.totalTrips} ritten • Gem. score: ${user.averageScore} • 
+                        ${user.lowPerformingPercentage}% slecht presterend
+                    </div>
+                </div>
+                <div class="performance-badge">SLECHT</div>
+            </div>
+        `).join('');
+    } else if (summaryDiv) {
+        summaryDiv.style.display = 'none';
+    }
+}
+
+function applyFilters() {
+    const performanceFilter = document.getElementById('performanceFilter').value;
+    const vehicleFilter = document.getElementById('vehicleFilter').value;
+    const userFilter = document.getElementById('userFilter').value;
+    
+    let filteredTrips = [...allTrips];
+    
+    // Performance filter
+    if (performanceFilter === 'low') {
+        filteredTrips = filteredTrips.filter(trip => trip.efficiencyScore <= 30);
+    } else if (performanceFilter === 'high') {
+        filteredTrips = filteredTrips.filter(trip => trip.efficiencyScore > 30);
+    }
+    
+    // Vehicle filter
+    if (vehicleFilter !== 'all') {
+        filteredTrips = filteredTrips.filter(trip => trip.vehicle === vehicleFilter);
+    }
+    
+    // User filter for low performing users
+    if (userFilter === 'lowPerforming') {
+        // Get low performing users
+        const userStats = {};
+        allTrips.forEach(trip => {
+            const username = trip.userId ? trip.userId.username : 'Onbekend';
+            if (!userStats[username]) {
+                userStats[username] = { total: 0, low: 0 };
+            }
+            userStats[username].total++;
+            if (trip.status === 'Low Value') {
+                userStats[username].low++;
+            }
+        });
+        
+        const lowPerformingUsernames = Object.keys(userStats).filter(
+            username => (userStats[username].low / userStats[username].total) > 0.7
+        );
+        
+        filteredTrips = filteredTrips.filter(trip => {
+            const username = trip.userId ? trip.userId.username : 'Onbekend';
+            return lowPerformingUsernames.includes(username);
+        });
+    }
+    
+    displayTrips(filteredTrips);
+}
+
+function clearAllFilters() {
+    document.getElementById('performanceFilter').value = 'all';
+    document.getElementById('vehicleFilter').value = 'all';
+    document.getElementById('userFilter').value = 'all';
+    
+    displayTrips(allTrips);
 }
