@@ -392,8 +392,9 @@ async function loadTrips() {
                 trips.forEach(t => {
                     const color = t.color === 'green' ? '#2ecc71' : '#ff2e1f';
                     list.innerHTML += `
-                        <div class="trip-card" style="border-left: 5px solid ${color}; background: white; padding: 10px; margin-bottom: 5px;">
-                            <strong style="float:right; color:${color}">${t.efficiencyScore}</strong>
+                        <div class="trip-card" style="border-left: 5px solid ${color}; background: white; padding: 10px; margin-bottom: 5px; position: relative;">
+                            <button onclick="deleteTrip('${t._id}')" class="delete-btn">×</button>
+                            <strong style="float:right; color:${color}; margin-right: 35px;">${t.efficiencyScore}</strong>
                             <strong>${t.userId ? t.userId.username : 'Onbekend'}</strong><br>
                             <small>${t.vehicle} - ${t.distance}km in ${t.duration}min</small><br>
                             <small>${t.location_a} → ${t.location_b}</small><br>
@@ -406,7 +407,28 @@ async function loadTrips() {
             logout();
         }
     } catch(e) { 
- 
         logout();
+    }
+}
+
+async function deleteTrip(tripId) {
+    try {
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        
+        const response = await fetch(`${BACKEND_URL}/api/trips/${tripId}`, {
+            method: 'DELETE',
+            headers: { 
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            loadTrips(); // Refresh the list
+        } else {
+            const error = await response.json();
+            alert(error.message || 'Verwijderen mislukt');
+        }
+    } catch (error) {
+        alert('Kan server niet bereiken');
     }
 }

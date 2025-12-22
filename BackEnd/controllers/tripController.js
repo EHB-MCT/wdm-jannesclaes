@@ -47,6 +47,25 @@ exports.createTrip = async (req, res) => {
     }
 };
 
+// @desc    Delete a trip
+// @route   DELETE /api/trips/:id (protected)
+exports.deleteTrip = async (req, res) => {
+    try {
+        // Verify trip belongs to current user
+        const trip = await Trip.findOne({ _id: req.params.id, userId: req.user.id });
+        
+        if (!trip) {
+            return res.status(404).json({ message: "Trip not found" });
+        }
+        
+        await Trip.findByIdAndDelete(req.params.id);
+        res.status(200).json({ message: "Trip deleted successfully" });
+        
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // Hulpfunctie: Het WMD Algoritme (op één plek zodat we het niet dubbel schrijven)
 function calculateScore(trip) {
     const tripObj = trip.toObject();

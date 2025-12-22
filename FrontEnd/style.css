@@ -176,6 +176,30 @@ body {
     border-left-color: var(--red); /* Rood voor Low Value */
 }
 
+.delete-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #ff2e1f;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.delete-btn:hover {
+    background: #d63018;
+    transform: scale(1.1);
+}
+
 .score-badge {
     float: right;
     font-weight: bold;
