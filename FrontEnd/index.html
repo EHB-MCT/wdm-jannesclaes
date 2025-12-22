@@ -56,6 +56,7 @@
             <div id="dashboard">
                 <div id="user-info">
                     <span id="user-welcome">Welkom, <span id="current-username"></span>!</span>
+                    <button id="adminBtn" style="display: none;">Admin Dashboard</button>
                     <button id="logoutBtn">Uitloggen</button>
                 </div>
                 
@@ -85,6 +86,20 @@
                     <h3>Mijn Recent Scores</h3>
                     <div id="tripList"></div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard Section (hidden until authenticated admin) -->
+        <div id="admin-section" style="display: none;">
+            <div id="admin-dashboard">
+                <div id="admin-header">
+                    <span id="admin-welcome">Admin Panel</span>
+                    <button id="backToUserBtn">Terug naar Dashboard</button>
+                    <button id="logoutAdminBtn">Uitloggen</button>
+                </div>
+                
+                <h3>Alle Geregistreerde Ritten</h3>
+                <div id="admin-trip-list"></div>
             </div>
         </div>
     </div>

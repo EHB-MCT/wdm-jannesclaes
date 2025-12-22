@@ -66,6 +66,24 @@ exports.deleteTrip = async (req, res) => {
     }
 };
 
+// @desc    Haal alle ritten van alle gebruikers op (admin only)
+// @route   GET /api/admin/trips (admin protected)
+exports.getAllTrips = async (req, res) => {
+    try {
+        // Haal alle trips op, ongebruiker
+        const trips = await Trip.find({})
+            .populate('userId', 'username')
+            .sort({ createdAt: -1 }); // Nieuwste eerst
+        
+        // Voeg scores toe voor weergave
+        const analyzedTrips = trips.map(trip => calculateScore(trip));
+        
+        res.status(200).json(analyzedTrips);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // Hulpfunctie: Het WMD Algoritme (op één plek zodat we het niet dubbel schrijven)
 function calculateScore(trip) {
     const tripObj = trip.toObject();

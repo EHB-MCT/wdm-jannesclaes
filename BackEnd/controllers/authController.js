@@ -47,7 +47,8 @@ exports.register = async (req, res) => {
             token,
             user: {
                 id: user._id,
-                username: user.username
+                username: user.username,
+                isAdmin: user.isAdmin
             }
         });
 
@@ -90,7 +91,8 @@ exports.login = async (req, res) => {
             expiresIn,
             user: {
                 id: user._id,
-                username: user.username
+                username: user.username,
+                isAdmin: user.isAdmin
             }
         });
 
@@ -115,6 +117,7 @@ exports.getProfile = async (req, res) => {
             user: {
                 id: user._id,
                 username: user.username,
+                isAdmin: user.isAdmin,
                 createdAt: user.createdAt
             }
         });

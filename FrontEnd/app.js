@@ -3,6 +3,7 @@ const BACKEND_URL = "http://localhost:5050";
 // DOM Elements
 const authSection = document.getElementById("auth-section");
 const tripSection = document.getElementById("trip-section");
+const adminSection = document.getElementById("admin-section");
 const loginForm = document.getElementById("login-form");
 const registerForm = document.getElementById("register-form");
 const currentUsername = document.getElementById("current-username");
@@ -11,8 +12,13 @@ const currentUsername = document.getElementById("current-username");
 const loginBtn = document.getElementById("loginBtn");
 const registerBtn = document.getElementById("registerBtn");
 const logoutBtn = document.getElementById("logoutBtn");
+const logoutAdminBtn = document.getElementById("logoutAdminBtn");
 const showRegister = document.getElementById("showRegister");
 const showLogin = document.getElementById("showLogin");
+
+// Admin elements
+const adminBtn = document.getElementById("adminBtn");
+const backToUserBtn = document.getElementById("backToUserBtn");
 
 // Trip elements
 const car = document.getElementById("carBtn");
@@ -36,8 +42,13 @@ function setupEventListeners() {
     loginBtn.addEventListener('click', login);
     registerBtn.addEventListener('click', register);
     logoutBtn.addEventListener('click', logout);
+    logoutAdminBtn.addEventListener('click', logout);
     showRegister.addEventListener('click', showRegisterForm);
     showLogin.addEventListener('click', showLoginForm);
+    
+    // Admin event listeners
+    adminBtn.addEventListener('click', showAdminSection);
+    backToUserBtn.addEventListener('click', showTripSection);
     
     // Trip event listeners
     car.onclick = () => setTransport("Auto");
@@ -262,7 +273,15 @@ function showAuthSection() {
 function showTripSection() {
     authSection.style.display = 'none';
     tripSection.style.display = 'block';
+    adminSection.style.display = 'none';
     currentUsername.textContent = currentUser.username;
+    
+    // Show admin button if user is admin
+    if (currentUser.isAdmin) {
+        adminBtn.style.display = 'inline-block';
+    } else {
+        adminBtn.style.display = 'none';
+    }
 }
 
 function showRegisterForm(e) {
@@ -275,6 +294,75 @@ function showLoginForm(e) {
     e.preventDefault();
     loginForm.style.display = 'block';
     registerForm.style.display = 'none';
+}
+
+function showAdminSection() {
+    authSection.style.display = 'none';
+    tripSection.style.display = 'none';
+    adminSection.style.display = 'block';
+    loadAllTrips();
+}
+
+async function loadAllTrips() {
+    const list = document.getElementById('admin-trip-list');
+    if(!list) return;
+
+    try {
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        
+        const res = await fetch(`${BACKEND_URL}/api/admin/trips`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        
+        if (res.ok) {
+            const trips = await res.json();
+
+            list.innerHTML = "";
+            if (trips.length === 0) {
+                list.innerHTML = "<p>Geen ritten gevonden.</p>";
+            } else {
+                // Create table
+                list.innerHTML = `
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #f0f0f0;">
+                                <th style="padding: 8px; border: 1px solid #ddd;">Gebruiker</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">Voertuig</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">Route</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">Afstand</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">Duur</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">Score</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">Status</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">Datum</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${trips.map(t => {
+                                const color = t.color === 'green' ? '#2ecc71' : '#ff2e1f';
+                                return `
+                                    <tr>
+                                        <td style="padding: 8px; border: 1px solid #ddd;">${t.userId ? t.userId.username : 'Onbekend'}</td>
+                                        <td style="padding: 8px; border: 1px solid #ddd;">${t.vehicle}</td>
+                                        <td style="padding: 8px; border: 1px solid #ddd;">${t.location_a} → ${t.location_b}</td>
+                                        <td style="padding: 8px; border: 1px solid #ddd;">${t.distance}km</td>
+                                        <td style="padding: 8px; border: 1px solid #ddd;">${t.duration}min</td>
+                                        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; color: ${color};">${t.efficiencyScore}</td>
+                                        <td style="padding: 8px; border: 1px solid #ddd; color: ${color};">${t.status}</td>
+                                        <td style="padding: 8px; border: 1px solid #ddd;">${new Date(t.createdAt).toLocaleDateString()}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+        } else {
+            list.innerHTML = "<p>Fout bij laden van ritten.</p>";
+        }
+    } catch(e) { 
+        console.error("Error loading admin trips:", e);
+        list.innerHTML = "<p>Serverfout bij laden van ritten.</p>";
+    }
 }
 
 // Trip submission (updated for authenticated user)
