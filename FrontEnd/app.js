@@ -42,9 +42,9 @@ function setupEventListeners() {
     // Trip event listeners
     car.onclick = () => setTransport("Auto");
     bike.onclick = () => setTransport("Fiets");
-    train.onclick = () => setTransport("Trein");
-    bus.onclick = () => setTransport("Bus");
-    walk.onclick = () => setTransport("Benen");
+    train.onclick = () => setTransport("Openbaar Vervoer");
+    bus.onclick = () => setTransport("Openbaar Vervoer");
+    walk.onclick = () => setTransport("Anders");
     
     if (submitBtn) {
         submitBtn.onclick = submitTrip;
@@ -121,11 +121,7 @@ function getCurrentLocation() {
         );
     });
 }
-car.onclick = () => setTransport("Auto");
-bike.onclick = () => setTransport("Fiets");
-train.onclick = () => setTransport("Trein");
-bus.onclick = () => setTransport("Bus");
-walk.onclick = () => setTransport("Benen");
+// Duplicate event handlers removed - already defined in setupEventListeners()
 
 // Authentication Functions
 async function login() {
