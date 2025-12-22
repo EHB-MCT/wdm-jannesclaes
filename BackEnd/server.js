@@ -1,109 +1,47 @@
-const express = require ("express");
+const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+
+// Importeer modellen en routes
 const User = require('./models/User');
-const Trip = require('./models/Trip')
+const Trip = require('./models/Trip');
+const authRoutes = require('./routes/authRoutes');
+const tripRoutes = require('./routes/tripRoutes');
 
 const app = express();
 
-const DB_URI = 'mongodb+srv://JannesClaes:Legolego.1407@cluster0.enmiw.mongodb.net/next_trip_db';
+// --- CONFIGURATIE ---
+// Poort instellen (via Docker of fallback naar 5050)
+const PORT = process.env.PORT || 5050;
+
+// Database verbinding string (via Docker of lokaal)
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/wmd_project';
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+
+// Middleware
+app.use(cors()); // Zorgt dat de frontend (poort 1234) mag praten met backend
+app.use(express.json()); // Zorgt dat we JSON data kunnen lezen
+
+// --- VERBINDING MET DATABASE ---
+mongoose.connect(MONGO_URI)
+    .then(() => console.log('🔌 MongoDB Verbonden!'))
+    .catch(err => console.error('❌ DB Fout:', err));
 
 
-app.use(cors());    
+// --- ROUTES ---
 
-app.use(express.json());
-
-mongoose.connect(DB_URI)
-    .then(() => console.log('Verbonden met MongoDB!'))
-    .catch(err => console.error('Fout bij verbinding met MongoDB:', err));
-
-
-
-app.get("/", (req, res) => {
-    res.send({message: "hello"})
-})
-
-app.post('/api/createUser', async (req, res) => {
-    try {
-        const { username, email } = req.body; 
-
-        if (!username || !email) {
-            return res.status(400).json({ message: "Username en email zijn verplicht." });
-        }
-
-        const newUser = new User({
-            username: username,
-            email: email
-        });
-
-        const savedUser = await newUser.save();
-
-        res.status(201).json({ 
-            message: "Gebruiker succesvol aangemaakt", 
-            user: savedUser 
-        });
-
-    } catch (error) {
-        if (error.code === 11000) { 
-            return res.status(400).json({ message: "Gebruikersnaam of e-mailadres is al in gebruik." });
-        }
-        res.status(500).json({ 
-            message: 'Er is een interne serverfout opgetreden', 
-            error: error.message 
-        });
-    }
+// 1. Test Route (om te kijken of hij leeft)
+app.get('/', (req, res) => {
+    res.send({ message: "Backend is online! 🚀" });
 });
 
-app.post('/api/createTrip', async (req, res) => {
-    try {
-        const loggedInUserId = '68f4bb94fcad753e0336415c'; 
+// 2. Authentication routes
+app.use('/api/auth', authRoutes);
 
-        const newTrip = new Trip({
-            userId: loggedInUserId, 
-            location_a: req.body.location_a,
-            location_b: req.body.location_b,
-            vehicle: req.body.vehicle,
-            duration: req.body.duration,
-            distance: req.body.distance
-        });
+// 3. Trip routes (protected)
+app.use('/api/trips', tripRoutes);
 
-        const savedTrip = await newTrip.save();
-
-        res.status(201).json(savedTrip);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
-    }
+// --- START DE SERVER ---
+app.listen(PORT, () => {
+    console.log(`🚀 Server draait op poort ${PORT}`);
 });
-
-app.get('/api/getUser/:username', async (req, res) => {
-    try {
-        const { username } = req.params;
-
-        const user = await User.findOne({ username: username });
-
-        if (!user) {
-            return res.status(404).json({ message: "Gebruiker niet gevonden" });
-        }
-
-        res.status(200).json({ 
-            user: user 
-        });
-
-    } catch (error) {
-        res.status(500).json({ 
-            message: 'Er is een interne serverfout opgetreden', 
-            error: error.message 
-        });
-    }
-});
-
-
-
-app.listen(3000, (err)=>{
-    if(!err){
-        console.log("running on port: " + 3000)
-    }
-    else{
-        console.error(err)
-    }
-})

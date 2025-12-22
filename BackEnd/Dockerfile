@@ -1,9 +1,17 @@
-FROM node:latest
+# BackEnd/Dockerfile
+FROM node:18
 
-COPY package*.json .
+WORKDIR /usr/src/app
 
-RUN npm install --quiet
+COPY package*.json ./
+RUN npm install
 
-COPY ./ ./
+COPY . .
 
-CMD ["npm", "start"]
+# We gebruiken nodemon zodat je server herstart als je code aanpast
+RUN npm install -g nodemon
+
+EXPOSE 5050
+
+# Start command
+CMD ["nodemon", "server.js"]

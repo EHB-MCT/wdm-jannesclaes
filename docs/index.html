@@ -8,44 +8,86 @@
 </head>
 <body>
     <div id="wrapper">
-        <div id="dashboard">
-            <div id="buttons">        
-                <button class="btn" id="carBtn">auto</button>
-                <button class="btn" id="bikeBtn">fiets</button>
-                <button class="btn" id="nmbsBtn">NMBS</button>
-                <button class="btn" id="deLijnBtn">De Lijn</button>
-                <button class="btn" id="walkBtn">te voet</button>
+        <!-- Authentication Section -->
+        <div id="auth-section">
+            <h2>Movement Dashboard</h2>
+            
+            <!-- Login Form -->
+            <div id="login-form">
+                <h3>Inloggen</h3>
+                <span>
+                    <input type="text" id="loginUsername" placeholder="Gebruikersnaam">
+                    <p>gebruikersnaam</p>
+                </span>
+                <span>
+                    <input type="password" id="loginPassword" placeholder="Wachtwoord">
+                    <p>wachtwoord</p>
+                </span>
+                <div class="remember-me">
+                    <input type="checkbox" id="rememberMe">
+                    <label for="rememberMe">Onthoud mij</label>
+                </div>
+                <button id="loginBtn">Inloggen</button>
+                <p>Nog geen account? <a href="#" id="showRegister">Registreer hier</a></p>
             </div>
+            
+            <!-- Register Form -->
+            <div id="register-form" style="display: none;">
+                <h3>Registreren</h3>
+                <span>
+                    <input type="text" id="registerUsername" placeholder="Gebruikersnaam">
+                    <p>gebruikersnaam (3-30 karakters)</p>
+                </span>
+                <span>
+                    <input type="password" id="registerPassword" placeholder="Wachtwoord">
+                    <p>wachtwoord (minimaal 8 karakters)</p>
+                </span>
+                <span>
+                    <input type="password" id="confirmPassword" placeholder="Bevestig wachtwoord">
+                    <p>bevestig wachtwoord</p>
+                </span>
+                <button id="registerBtn">Registreer</button>
+                <p>Al een account? <a href="#" id="showLogin">Inloggen</a></p>
+            </div>
+        </div>
 
-            <div id="inputs">
-                <span>
-                    <input type="text" id="inputUsername">
-                    <p>username</p>
-                </span>
-                <span>
-                    <input type="text" id="inputDestination">
-                    <p>bestemming</p>
-                </span>
-                <span>
-                    <input type="number" min="1" value="1" id="inputDistance">
-                    <p>kilometer</p>
-                </span>
-
-                <span>
-                    <input type="number" min="1" value="1" id="inputDuration">
-                    <p>minuten</p>
-                </span>
+        <!-- Trip Section (hidden until authenticated) -->
+        <div id="trip-section" style="display: none;">
+            <div id="dashboard">
+                <div id="user-info">
+                    <span id="user-welcome">Welkom, <span id="current-username"></span>!</span>
+                    <button id="logoutBtn">Uitloggen</button>
+                </div>
                 
+                <div id="buttons">        
+                    <button class="btn" id="carBtn">auto</button>
+                    <button class="btn" id="bikeBtn">fiets</button>
+                    <button class="btn" id="nmbsBtn">NMBS</button>
+                    <button class="btn" id="deLijnBtn">De Lijn</button>
+                    <button class="btn" id="walkBtn">te voet</button>
+                </div>
+
+                <div id="inputs">
+                    <span>
+                        <input type="text" id="inputDestination" placeholder="Bestemming">
+                        <p>bestemming</p>
+                    </span>
+                    
+                    <span>
+                        <input type="number" min="1" value="1" id="inputDuration">
+                        <p>minuten</p>
+                    </span>
+                </div>
+
+                <button id="submitBtn">Rit Toevoegen</button>
+                
+                <div id="wmd-results">
+                    <h3>Mijn Recent Scores</h3>
+                    <div id="tripList"></div>
+                </div>
             </div>
-
-            <button id="submitBtn">submit</button>
-
         </div>
     </div>
-    
-
-
-    
 </body>
 
 <script src="app.js"></script>
