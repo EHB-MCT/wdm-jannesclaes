@@ -7,6 +7,7 @@ const User = require('./models/User');
 const Trip = require('./models/Trip');
 const authRoutes = require('./routes/authRoutes');
 const tripRoutes = require('./routes/tripRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 
@@ -40,6 +41,9 @@ app.use('/api/auth', authRoutes);
 
 // 3. Trip routes (protected)
 app.use('/api/trips', tripRoutes);
+
+// 4. Admin routes (admin protected)
+app.use('/api/admin', adminRoutes);
 
 // --- START DE SERVER ---
 app.listen(PORT, () => {

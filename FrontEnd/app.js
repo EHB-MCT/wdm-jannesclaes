@@ -3,6 +3,7 @@ const BACKEND_URL = "http://localhost:5050";
 // DOM Elements
 const authSection = document.getElementById("auth-section");
 const tripSection = document.getElementById("trip-section");
+const adminSection = document.getElementById("admin-section");
 const loginForm = document.getElementById("login-form");
 const registerForm = document.getElementById("register-form");
 const currentUsername = document.getElementById("current-username");
@@ -11,8 +12,13 @@ const currentUsername = document.getElementById("current-username");
 const loginBtn = document.getElementById("loginBtn");
 const registerBtn = document.getElementById("registerBtn");
 const logoutBtn = document.getElementById("logoutBtn");
+const logoutAdminBtn = document.getElementById("logoutAdminBtn");
 const showRegister = document.getElementById("showRegister");
 const showLogin = document.getElementById("showLogin");
+
+// Admin elements
+const adminBtn = document.getElementById("adminBtn");
+const backToUserBtn = document.getElementById("backToUserBtn");
 
 // Trip elements
 const car = document.getElementById("carBtn");
@@ -24,6 +30,7 @@ const submitBtn = document.getElementById("submitBtn");
 
 let transport = "";
 let currentUser = null;
+let allTrips = []; // Store all trips for filtering
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
@@ -36,8 +43,13 @@ function setupEventListeners() {
     loginBtn.addEventListener('click', login);
     registerBtn.addEventListener('click', register);
     logoutBtn.addEventListener('click', logout);
+    logoutAdminBtn.addEventListener('click', logout);
     showRegister.addEventListener('click', showRegisterForm);
     showLogin.addEventListener('click', showLoginForm);
+    
+    // Admin event listeners
+    adminBtn.addEventListener('click', showAdminSection);
+    backToUserBtn.addEventListener('click', showTripSection);
     
     // Trip event listeners
     car.onclick = () => setTransport("Auto");
@@ -48,6 +60,25 @@ function setupEventListeners() {
     
     if (submitBtn) {
         submitBtn.onclick = submitTrip;
+    }
+    
+    // Admin filter event listeners
+    const performanceFilter = document.getElementById('performanceFilter');
+    const vehicleFilter = document.getElementById('vehicleFilter');
+    const userFilter = document.getElementById('userFilter');
+    const clearFilters = document.getElementById('clearFilters');
+    
+    if (performanceFilter) {
+        performanceFilter.addEventListener('change', applyFilters);
+    }
+    if (vehicleFilter) {
+        vehicleFilter.addEventListener('change', applyFilters);
+    }
+    if (userFilter) {
+        userFilter.addEventListener('change', applyFilters);
+    }
+    if (clearFilters) {
+        clearFilters.addEventListener('click', clearAllFilters);
     }
 }
 
@@ -262,7 +293,15 @@ function showAuthSection() {
 function showTripSection() {
     authSection.style.display = 'none';
     tripSection.style.display = 'block';
+    adminSection.style.display = 'none';
     currentUsername.textContent = currentUser.username;
+    
+    // Show admin button if user is admin
+    if (currentUser.isAdmin) {
+        adminBtn.style.display = 'inline-block';
+    } else {
+        adminBtn.style.display = 'none';
+    }
 }
 
 function showRegisterForm(e) {
@@ -275,6 +314,45 @@ function showLoginForm(e) {
     e.preventDefault();
     loginForm.style.display = 'block';
     registerForm.style.display = 'none';
+}
+
+function showAdminSection() {
+    authSection.style.display = 'none';
+    tripSection.style.display = 'none';
+    adminSection.style.display = 'block';
+    loadAllTrips();
+}
+
+async function loadAllTrips() {
+    const list = document.getElementById('admin-trip-list');
+    if(!list) return;
+
+    try {
+        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+        
+        const res = await fetch(`${BACKEND_URL}/api/admin/trips`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        
+        if (res.ok) {
+            const trips = await res.json();
+            allTrips = trips; // Store all trips for filtering
+            
+            // Initial display with all data
+            displayTrips(allTrips);
+            
+            // Calculate and display user performance
+            displayUserPerformance(allTrips);
+        } else {
+            const list = document.getElementById('admin-trip-list');
+            if (list) {
+                list.innerHTML = "<p>Fout bij laden van ritten.</p>";
+            }
+        }
+    } catch(e) { 
+        console.error("Error loading admin trips:", e);
+        list.innerHTML = "<p>Serverfout bij laden van ritten.</p>";
+    }
 }
 
 // Trip submission (updated for authenticated user)
@@ -431,4 +509,199 @@ async function deleteTrip(tripId) {
     } catch (error) {
         alert('Kan server niet bereiken');
     }
+}
+
+// Admin Filtering Functions
+function displayTrips(trips) {
+    const list = document.getElementById('admin-trip-list');
+    if (!list) return;
+
+    list.innerHTML = "";
+    if (trips.length === 0) {
+        list.innerHTML = "<p>Geen ritten gevonden met de huidige filters.</p>";
+        return;
+    }
+
+    // Create table
+    list.innerHTML = `
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f0f0f0;">
+                    <th style="padding: 8px; border: 1px solid #ddd;">Gebruiker</th>
+                    <th style="padding: 8px; border: 1px solid #ddd;">Voertuig</th>
+                    <th style="padding: 8px; border: 1px solid #ddd;">Route</th>
+                    <th style="padding: 8px; border: 1px solid #ddd;">Afstand</th>
+                    <th style="padding: 8px; border: 1px solid #ddd;">Duur</th>
+                    <th style="padding: 8px; border: 1px solid #ddd;">Score</th>
+                    <th style="padding: 8px; border: 1px solid #ddd;">Status</th>
+                    <th style="padding: 8px; border: 1px solid #ddd;">Datum</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${trips.map(t => {
+                    const color = t.color === 'green' ? '#2ecc71' : '#ff2e1f';
+                    return `
+                        <tr>
+                            <td style="padding: 8px; border: 1px solid #ddd;">${t.userId ? t.userId.username : 'Onbekend'}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd;">${t.vehicle}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd;">${t.location_a} → ${t.location_b}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd;">${t.distance}km</td>
+                            <td style="padding: 8px; border: 1px solid #ddd;">${t.duration}min</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; color: ${color};">${t.efficiencyScore}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; color: ${color};">${t.status}</td>
+                            <td style="padding: 8px; border: 1px solid #ddd;">${new Date(t.createdAt).toLocaleDateString()}</td>
+                        </tr>
+                    `;
+                }).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function displayUserPerformance(trips) {
+    // Calculate user statistics
+    const userStats = {};
+    
+    trips.forEach(trip => {
+        const username = trip.userId ? trip.userId.username : 'Onbekend';
+        if (!userStats[username]) {
+            userStats[username] = {
+                totalTrips: 0,
+                lowPerformingTrips: 0,
+                totalScore: 0,
+                vehicles: {}
+            };
+        }
+        
+        userStats[username].totalTrips++;
+        userStats[username].totalScore += trip.efficiencyScore;
+        
+        if (trip.status === 'Low Value') {
+            userStats[username].lowPerformingTrips++;
+        }
+        
+        // Track vehicle usage
+        if (!userStats[username].vehicles[trip.vehicle]) {
+            userStats[username].vehicles[trip.vehicle] = 0;
+        }
+        userStats[username].vehicles[trip.vehicle]++;
+    });
+    
+    // Calculate average scores and performance levels
+    const allUsers = [];
+    
+    Object.keys(userStats).forEach(username => {
+        const stats = userStats[username];
+        stats.averageScore = Math.round(stats.totalScore / stats.totalTrips);
+        stats.lowPerformingPercentage = Math.round((stats.lowPerformingTrips / stats.totalTrips) * 100);
+        
+        // Determine performance level
+        let performanceLevel, badgeColor, badgeText;
+        if (stats.lowPerformingPercentage > 70) {
+            performanceLevel = 'SLECHT';
+            badgeColor = '#ff2e1f';
+        } else if (stats.lowPerformingPercentage > 30) {
+            performanceLevel = 'GEMIDDELD';
+            badgeColor = '#ff9500';
+        } else {
+            performanceLevel = 'GOED';
+            badgeColor = '#2ecc71';
+        }
+        
+        // Get most used vehicle
+        const mostUsedVehicle = Object.keys(stats.vehicles).reduce(
+            (a, b) => stats.vehicles[a] > stats.vehicles[b] ? a : b
+        );
+        
+        allUsers.push({
+            username,
+            ...stats,
+            performanceLevel,
+            badgeColor,
+            mostUsedVehicle
+        });
+    });
+    
+    // Sort by average score (highest first) and then by username
+    allUsers.sort((a, b) => {
+        if (b.averageScore !== a.averageScore) {
+            return b.averageScore - a.averageScore;
+        }
+        return a.username.localeCompare(b.username);
+    });
+    
+    // Display all users
+    const summaryDiv = document.getElementById('user-performance-summary');
+    const usersDiv = document.getElementById('all-users-performance');
+    
+    if (summaryDiv && usersDiv) {
+        summaryDiv.style.display = 'block';
+        usersDiv.innerHTML = allUsers.map(user => `
+            <div class="user-performance-card">
+                <div class="user-info">
+                    <div class="username">${user.username}</div>
+                    <div class="stats">
+                        ${user.totalTrips} ritten • Gem. score: ${user.averageScore} • 
+                        ${user.lowPerformingPercentage}% slecht • Meest gebruikt: ${user.mostUsedVehicle}
+                    </div>
+                </div>
+                <div class="performance-badge" style="background-color: ${user.badgeColor};">${user.performanceLevel}</div>
+            </div>
+        `).join('');
+    }
+}
+
+function applyFilters() {
+    const performanceFilter = document.getElementById('performanceFilter').value;
+    const vehicleFilter = document.getElementById('vehicleFilter').value;
+    const userFilter = document.getElementById('userFilter').value;
+    
+    let filteredTrips = [...allTrips];
+    
+    // Performance filter
+    if (performanceFilter === 'low') {
+        filteredTrips = filteredTrips.filter(trip => trip.efficiencyScore <= 30);
+    } else if (performanceFilter === 'high') {
+        filteredTrips = filteredTrips.filter(trip => trip.efficiencyScore > 30);
+    }
+    
+    // Vehicle filter
+    if (vehicleFilter !== 'all') {
+        filteredTrips = filteredTrips.filter(trip => trip.vehicle === vehicleFilter);
+    }
+    
+    // User filter for low performing users
+    if (userFilter === 'lowPerforming') {
+        // Get low performing users
+        const userStats = {};
+        allTrips.forEach(trip => {
+            const username = trip.userId ? trip.userId.username : 'Onbekend';
+            if (!userStats[username]) {
+                userStats[username] = { total: 0, low: 0 };
+            }
+            userStats[username].total++;
+            if (trip.status === 'Low Value') {
+                userStats[username].low++;
+            }
+        });
+        
+        const lowPerformingUsernames = Object.keys(userStats).filter(
+            username => (userStats[username].low / userStats[username].total) > 0.7
+        );
+        
+        filteredTrips = filteredTrips.filter(trip => {
+            const username = trip.userId ? trip.userId.username : 'Onbekend';
+            return lowPerformingUsernames.includes(username);
+        });
+    }
+    
+    displayTrips(filteredTrips);
+}
+
+function clearAllFilters() {
+    document.getElementById('performanceFilter').value = 'all';
+    document.getElementById('vehicleFilter').value = 'all';
+    document.getElementById('userFilter').value = 'all';
+    
+    displayTrips(allTrips);
 }

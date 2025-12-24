@@ -8,7 +8,8 @@ const Trip = require('./models/Trip');
 const DAYS_TO_SIMULATE = 90; 
 
 // Verbinden
-mongoose.connect(process.env.MONGO_URI)
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/wmd_project';
+mongoose.connect(MONGO_URI)
     .then(() => {
         console.log('🔌 Verbonden voor seeding...');
         seedData();
@@ -22,8 +23,28 @@ async function seedData() {
         console.log('🧹 Oude data verwijderd.');
 
         // De Users
-        const sophie = await User.create({ username: "Sophie_CEO", email: "sophie@company.com" });
-        const jonas = await User.create({ username: "Jonas_Student", email: "jonas@student.com" });
+        const bcrypt = require('bcryptjs');
+        const adminHashedPassword = await bcrypt.hash('admin1234', 12);
+        const admin = await User.create({ 
+            username: "admin", 
+            password: adminHashedPassword,
+            isAdmin: true 
+        });
+        console.log('👑 Admin gebruiker aangemaakt: admin / admin1234');
+
+        const sophieHashedPassword = await bcrypt.hash('sophie123', 12);
+        const jonasHashedPassword = await bcrypt.hash('jonas123', 12);
+        
+        const sophie = await User.create({ 
+            username: "Sophie_CEO", 
+            password: sophieHashedPassword,
+            email: "sophie@company.com" 
+        });
+        const jonas = await User.create({ 
+            username: "Jonas_Student", 
+            password: jonasHashedPassword,
+            email: "jonas@student.com" 
+        });
 
         const trips = [];
         
