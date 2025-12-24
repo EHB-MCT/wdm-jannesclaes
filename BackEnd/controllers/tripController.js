@@ -101,17 +101,43 @@ exports.getAllTrips = async (req, res) => {
 function calculateScore(trip) {
     const tripObj = trip.toObject();
     
-    // Formule: Snelheid = Afstand / Tijd
-    let rawScore = (trip.distance / trip.duration);
-    tripObj.efficiencyScore = Math.round(rawScore * 100);
-
-    // Het Oordeel
-    if (tripObj.efficiencyScore > 30) {
-        tripObj.status = "High Performer"; 
+    // Base Scores
+    const baseScores = {
+        "Anders": 100,
+        "Te Voet": 100,
+        "Fiets": 95,
+        "Openbaar Vervoer": 50,
+        "Auto": 10,
+        "Vliegtuig": 5 // Airplane penalty (not in spec but in enum)
+    };
+    
+    let score = baseScores[trip.vehicle] || 10; // Default to 10 if unknown vehicle
+    
+    // Vehicle-specific calculations
+    if (trip.vehicle === "Auto") {
+        // Subtract 2 points per km and 1 point per minute
+        score = score - (2 * trip.distance) - (1 * trip.duration);
+        score = Math.max(0, score); // Minimum score is 0
+    } else if (trip.vehicle === "Fiets" || trip.vehicle === "Anders" || trip.vehicle === "Te Voet") {
+        // Add 1 point per km and 0.5 points per minute
+        score = score + (1 * trip.distance) + (0.5 * trip.duration);
+        score = Math.min(100, score); // Maximum score is 100
+    }
+    // Public transport keeps base score flat (50) regardless of distance/time
+    
+    tripObj.efficiencyScore = Math.round(score);
+    
+    // Status assignment
+    if (score >= 85) {
+        tripObj.status = "Eco Warrior";
         tripObj.color = "green";
+    } else if (score >= 25 && score <= 84) {
+        tripObj.status = "Eco Neutral";
+        tripObj.color = "orange";
     } else {
-        tripObj.status = "Low Value";      
+        tripObj.status = "Climate Criminal";
         tripObj.color = "red";
     }
+    
     return tripObj;
 }
