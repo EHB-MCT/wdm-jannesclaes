@@ -101,33 +101,80 @@ exports.getAllTrips = async (req, res) => {
 function calculateScore(trip) {
     const tripObj = trip.toObject();
     
-    // Base Scores
-    const baseScores = {
-        "Anders": 100,
-        "Te Voet": 100,
-        "Fiets": 95,
-        "Openbaar Vervoer": 50,
-        "Auto": 10,
-        "Vliegtuig": 5 // Airplane penalty (not in spec but in enum)
-    };
+    // Distance-based scoring with realistic thresholds
+    const distance = trip.distance;
     
-    let score = baseScores[trip.vehicle] || 10; // Default to 10 if unknown vehicle
-    
-    // Vehicle-specific calculations
+    // Vehicle-specific calculations with distance awareness
     if (trip.vehicle === "Auto") {
-        // Subtract 2 points per km and 1 point per minute
-        score = score - (2 * trip.distance) - (1 * trip.duration);
+        // Distance-based penalties for cars (less harsh, starting from 35)
+        let score = 35; // Higher starting point
+        
+        if (distance <= 5) {
+            score = score - 1.5 * distance; // Reduced penalty for short trips
+        } else if (distance <= 15) {
+            score = score - 1.5 * 5 - 1 * (distance - 5); // Further reduction for medium trips
+        } else if (distance <= 35) {
+            score = score - 1.5 * 5 - 1 * 10 - 0.6 * (distance - 15); // Significant reduction for long trips
+        } else {
+            score = score - 1.5 * 5 - 1 * 10 - 0.6 * 20 - 0.3 * (distance - 35); // Minimal penalty for very long trips
+        }
+        
+        // Time penalty for idling/traffic (much less severe)
+        let timePenalty = 0.4 * trip.duration;
+        if (distance > 15) timePenalty *= 0.5; // 50% reduction for long trips
+        if (distance > 35) timePenalty *= 0.5; // Additional reduction for very long trips
+        
+        score = score - timePenalty;
         score = Math.max(0, score); // Minimum score is 0
+        tripObj.efficiencyScore = Math.round(score);
+        
+    } else if (trip.vehicle === "Openbaar Vervoer") {
+        // Distance-based scoring for public transport (peaks at certain distance)
+        let score;
+        if (distance <= 3) {
+            score = 25; // Inefficient for very short trips
+        } else if (distance <= 12) {
+            score = 45; // Baseline for typical commute
+        } else if (distance <= 35) {
+            score = 75; // Optimal range for public transport
+        } else {
+            score = 70; // Slightly less optimal for very long trips
+        }
+        
+        tripObj.efficiencyScore = Math.round(score);
+        
     } else if (trip.vehicle === "Fiets" || trip.vehicle === "Anders" || trip.vehicle === "Te Voet") {
-        // Add 1 point per km and 0.5 points per minute
-        score = score + (1 * trip.distance) + (0.5 * trip.duration);
+        // Active transport with distance caps and diminishing rewards
+        const baseScore = trip.vehicle === "Fiets" ? 95 : 100;
+        
+        let distanceBonus = 0;
+        let timeBonus = 0;
+        
+        if (distance <= 10) {
+            // Full rewards for reasonable distances
+            distanceBonus = 1 * distance;
+            timeBonus = 0.5 * trip.duration;
+        } else if (distance <= 25) {
+            // Diminishing rewards for longer distances
+            distanceBonus = 1 * 10 + 0.4 * (distance - 10);
+            timeBonus = 0.5 * trip.duration * 0.6;
+        } else {
+            // Minimal rewards for very long active transport trips
+            distanceBonus = 1 * 10 + 0.4 * 15 + 0.2 * (distance - 25);
+            timeBonus = 0.5 * trip.duration * 0.3;
+        }
+        
+        let score = baseScore + distanceBonus + timeBonus;
         score = Math.min(100, score); // Maximum score is 100
+        tripObj.efficiencyScore = Math.round(score);
+        
+    } else {
+        // Default scoring for other vehicles (like Vliegtuig)
+        tripObj.efficiencyScore = 5;
     }
-    // Public transport keeps base score flat (50) regardless of distance/time
-    
-    tripObj.efficiencyScore = Math.round(score);
     
     // Status assignment
+    const score = tripObj.efficiencyScore;
     if (score >= 85) {
         tripObj.status = "Eco Warrior";
         tripObj.color = "green";
