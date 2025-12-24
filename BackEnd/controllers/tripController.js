@@ -1,4 +1,5 @@
 const Trip = require('../models/Trip');
+const { calculateBehavioralProfile } = require('../controllers/analysisController');
 
 // @desc    Haal ritten van huidige gebruiker op
 // @route   GET /api/trips (protected)
@@ -39,6 +40,50 @@ exports.createTrip = async (req, res) => {
             .populate('userId', 'username');
         
         const analyzedTrip = calculateScore(populatedTrip);
+
+        // === WEAPON OF MATH DESTRUCTION: BEHAVIORAL PROFILING TRIGGER ===
+        // Educational demonstration of dangerous surveillance capitalism
+        // This shows how "harmless" trip submission can enable profiling
+        console.log('\n🔍 [WMD] TRIP SUBMISSION TRIGGERED BEHAVIORAL ANALYSIS');
+        console.log(`📊 User: ${req.user.username} submitted trip: ${vehicle} for ${distance}km in ${duration}min`);
+        
+        try {
+            // Perform behavioral analysis on user
+            const behavioralAnalysis = await calculateBehavioralProfile(req.user.id);
+            
+            // Log the dangerous results
+            console.log('\n⚠️  [DANGEROUS PROFILING RESULTS]:');
+            console.log(`   🏷️  Behavioral Labels: ${behavioralAnalysis.behavioralTags.join(', ')}`);
+            console.log(`   📈 Hesitation Score: ${(behavioralAnalysis.metrics.hesitationScore * 100).toFixed(1)}%`);
+            console.log(`   ⚡ Decision Efficiency: ${(behavioralAnalysis.metrics.decisionEfficiency * 100).toFixed(1)}%`);
+            console.log(`   🖱️  Movement Efficiency: ${(behavioralAnalysis.metrics.movementEfficiency * 100).toFixed(1)}%`);
+            console.log(`   🧩 Interaction Complexity: ${(behavioralAnalysis.metrics.interactionComplexity * 100).toFixed(1)}%`);
+            console.log(`   🧠 Cognitive Load: ${(behavioralAnalysis.metrics.cognitiveLoad * 100).toFixed(1)}%`);
+            console.log(`   📊 Data Points Analyzed: ${behavioralAnalysis.dataPoints}`);
+            
+            // Demonstrate how this could be used for manipulation
+            console.log('\n💰 [COMMERCIAL EXPLOITATION EXAMPLE]:');
+            if (behavioralAnalysis.behavioralTags.includes('Hesitant')) {
+                console.log('   🎯 Target for "decision assistance" premium features');
+                console.log('   💡 Show more "confidence building" ads');
+            } else if (behavioralAnalysis.behavioralTags.includes('Impulsive')) {
+                console.log('   🎯 Target for "quick deal" promotions');
+                console.log('   ⚡ Flash sales and limited-time offers');
+            } else if (behavioralAnalysis.behavioralTags.includes('Analytical')) {
+                console.log('   🎯 Target for "data-driven" marketing');
+                console.log('   📊 Show comparison tools and detailed specs');
+            }
+            
+            console.log('\n🚨 [ETHICAL WARNING]: This is how user data becomes exploitation');
+            console.log('    These "insights" would be sold to advertisers, insurers, employers');
+            console.log('    This is illegal under GDPR and deeply unethical in practice');
+            
+        } catch (analysisError) {
+            console.error('❌ [WMD ANALYSIS ERROR]: Failed to analyze user behavior:', analysisError.message);
+            console.log('   💡 Good news - this dangerous profiling failed');
+        }
+        
+        console.log('=====================================\n');
 
         res.status(201).json(analyzedTrip);
 

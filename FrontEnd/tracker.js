@@ -97,8 +97,7 @@ class TelemetryTracker {
             }
         };
 
-        // TEMPORARY: Log tracked events
-        console.log('🔍 Telemetry tracked:', telemetryEvent);
+
 
         this.eventBuffer.push(telemetryEvent);
 
@@ -151,9 +150,7 @@ class TelemetryTracker {
 
             if (response.ok) {
                 const result = await response.json();
-                // TEMPORARY: Log sent events
-                console.log(`📤 Successfully sent ${eventsToSend.length} telemetry events:`, eventsToSend);
-                console.log('Server response:', result);
+
             } else {
                 console.error('Failed to send telemetry events:', response.status);
                 // Re-add events to buffer for retry (limited)

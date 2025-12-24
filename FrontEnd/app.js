@@ -450,7 +450,14 @@ async function createTrip(trip) {
         if (response.ok) {
 
             loadTrips(); // Lijst verversen
-            alert(`Je score: ${result.efficiencyScore}\nOordeel: ${result.status}`);
+            alert(`Je score: ${result.efficiencyScore}\nOordeel: ${result.status}\n\n⚠️  Je gedrag is nu geanalyseerd door onze "Weapon of Math Destruction"!\nCheck de backend console om te zien welke schadelijke labels je hebt gekregen.`);
+            
+            // Educational logging - show user they're being profiled
+            console.log('\n🔍 [SURVEILLANCE WARNING] Your behavior has been analyzed:');
+            console.log('   This trip submission triggered behavioral profiling');
+            console.log('   Check the browser network tab and backend logs');
+            console.log('   This demonstrates how "harmless" data collection becomes exploitation');
+            console.log('   In real applications, you would NOT be told about this profiling\n');
             
             // Reset form
             document.getElementById("inputDestination").value = "";
