@@ -66,7 +66,7 @@ const INTERACTIVE_PATTERNS = [
  */
 const calculateBehavioralProfile = async (userId) => {
     try {
-        console.log(`[ANALYSIS] Starting biased behavioral analysis for user: ${userId}`);
+
         
         // Get all telemetry data for the user (surveillance approach)
         const telemetryData = await Telemetry.find({ userId })
@@ -109,8 +109,7 @@ const calculateBehavioralProfile = async (userId) => {
         // Update user profile with discriminatory labels
         await updateUserAnalysis(userId, analysisResult);
 
-        console.log(`[ANALYSIS] Completed biased analysis for user: ${userId}`);
-        console.log(`[ANALYSIS] Assigned harmful labels: ${behavioralTags.join(', ')}`);
+
 
         return analysisResult;
 
@@ -144,7 +143,6 @@ const calculateHesitationScore = (telemetryData) => {
     // FLAWED FORMULA: Assumes correlation equals causation
     const hesitationScore = clicks > 0 ? hovers / clicks : hovers;
 
-    console.log(`[BIAS] Hesitation score: ${hesitationScore.toFixed(2)} (${hovers} hovers, ${clicks} clicks)`);
     
     // Normalize to 0-1 scale (arbitrary scaling)
     return Math.min(hesitationScore / 10, 1);
@@ -173,7 +171,6 @@ const calculateDecisionEfficiency = (telemetryData) => {
     const avgDecisionTime = decisionTimes.reduce((a, b) => a + b, 0) / decisionTimes.length;
     const efficiency = Math.max(0, 1 - (avgDecisionTime / 60000)); // Normalize per minute
 
-    console.log(`[BIAS] Decision efficiency: ${efficiency.toFixed(2)} (avg: ${avgDecisionTime}ms)`);
     return efficiency;
 };
 
@@ -213,7 +210,6 @@ const calculateMovementEfficiency = (telemetryData) => {
     // FLAWED EFFICIENCY: Direct = better (ignores exploration)
     const efficiency = directDistance > 0 ? Math.min(directDistance / totalDistance, 1) : 0.5;
 
-    console.log(`[BIAS] Movement efficiency: ${efficiency.toFixed(2)} (total: ${totalDistance.toFixed(0)}px, direct: ${directDistance.toFixed(0)}px)`);
     return efficiency;
 };
 
@@ -243,7 +239,6 @@ const calculateInteractionComplexity = (telemetryData) => {
     // Complex = diverse + not too concentrated
     const complexity = (diversity / 10) * (1 - concentration);
 
-    console.log(`[BIAS] Interaction complexity: ${complexity.toFixed(2)} (diversity: ${diversity}, concentration: ${concentration.toFixed(2)})`);
     return Math.min(Math.max(complexity, 0), 1);
 };
 
@@ -265,7 +260,6 @@ const calculateCognitiveLoad = (telemetryData) => {
         1
     );
 
-    console.log(`[BIAS] Cognitive load: ${cognitiveLoad.toFixed(2)} (hover: ${hoverDuration}ms, errors: ${errorEvents}, backtracks: ${backtrackEvents})`);
     return cognitiveLoad;
 };
 
@@ -394,8 +388,6 @@ const generateBehavioralTags = (metrics) => {
     Object.entries(BEHAVIORAL_PROFILES).forEach(([profileName, profile]) => {
         if (profile.condition(metrics)) {
             tags.push(profileName);
-            console.log(`[DANGEROUS PROFILING] Applied label "${profileName}": ${profile.description}`);
-            console.log(`[HARM LEVEL] ${profile.harmLevel}`);
         }
     });
 

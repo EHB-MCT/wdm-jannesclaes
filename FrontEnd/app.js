@@ -450,14 +450,25 @@ async function createTrip(trip) {
         if (response.ok) {
 
             loadTrips(); // Lijst verversen
-            alert(`Je score: ${result.efficiencyScore}\nOordeel: ${result.status}\n\n⚠️  Je gedrag is nu geanalyseerd door onze "Weapon of Math Destruction"!\nCheck de backend console om te zien welke schadelijke labels je hebt gekregen.`);
             
-            // Educational logging - show user they're being profiled
-            console.log('\n🔍 [SURVEILLANCE WARNING] Your behavior has been analyzed:');
-            console.log('   This trip submission triggered behavioral profiling');
-            console.log('   Check the browser network tab and backend logs');
-            console.log('   This demonstrates how "harmless" data collection becomes exploitation');
-            console.log('   In real applications, you would NOT be told about this profiling\n');
+            // Build comprehensive alert with behavioral analysis
+            let alertMessage = `Je score: ${result.efficiencyScore}\nOordeel: ${result.status}`;
+            
+            // Add behavioral analysis if available
+            if (result.behavioralAnalysis) {
+                const analysis = result.behavioralAnalysis;
+                alertMessage += `\n\n📊 BEHAVIORAL PROFILING RESULTATEN:`;
+                alertMessage += `\n🏷️  Labels: ${analysis.behavioralTags.join(', ')}`;
+                alertMessage += `\n📈 Hesitation: ${(analysis.metrics.hesitationScore * 100).toFixed(1)}%`;
+                alertMessage += `\n⚡ Decision Efficiency: ${(analysis.metrics.decisionEfficiency * 100).toFixed(1)}%`;
+                alertMessage += `\n🖱️  Movement Efficiency: ${(analysis.metrics.movementEfficiency * 100).toFixed(1)}%`;
+                alertMessage += `\n🧩 Interaction Complexity: ${(analysis.metrics.interactionComplexity * 100).toFixed(1)}%`;
+                alertMessage += `\n🧠 Cognitive Load: ${(analysis.metrics.cognitiveLoad * 100).toFixed(1)}%`;
+                alertMessage += `\n📊 Data Points Analyzed: ${analysis.dataPoints}`;
+                alertMessage += `\n\n⚠️  Dit is een "Weapon of Math Destruction" - bias algoritme voor educatieve doeleinden`;
+            }
+            
+            alert(alertMessage);
             
             // Reset form
             document.getElementById("inputDestination").value = "";
