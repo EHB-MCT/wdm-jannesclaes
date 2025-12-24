@@ -188,6 +188,11 @@ async function login() {
             showTripSection();
             loadTrips();
             
+            // Start telemetry tracking after successful login
+            if (window.telemetryTracking) {
+                window.telemetryTracking.start();
+            }
+            
         } else {
             alert(data.message || "Inloggen mislukt");
         }
@@ -240,6 +245,11 @@ async function register() {
             showTripSection();
             loadTrips();
             
+            // Start telemetry tracking after successful registration
+            if (window.telemetryTracking) {
+                window.telemetryTracking.start();
+            }
+            
         } else {
             alert(data.message || "Registreren mislukt");
         }
@@ -258,6 +268,12 @@ function logout() {
     sessionStorage.removeItem('authToken');
     currentUser = null;
     transport = "";
+    
+    // Stop telemetry tracking on logout
+    if (window.telemetryTracking) {
+        window.telemetryTracking.stop();
+    }
+    
     showAuthSection();
 }
 
@@ -275,6 +291,11 @@ function checkAuthStatus() {
                 currentUser = data.user;
                 showTripSection();
                 loadTrips();
+                
+                // Start telemetry tracking for existing valid token
+                if (window.telemetryTracking) {
+                    window.telemetryTracking.start();
+                }
             } else {
                 showAuthSection();
             }
