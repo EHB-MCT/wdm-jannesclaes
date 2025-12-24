@@ -106,21 +106,25 @@ function calculateScore(trip) {
     
     // Vehicle-specific calculations with distance awareness
     if (trip.vehicle === "Auto") {
-        // Distance-based penalties for cars (less harsh, starting from 35)
-        let score = 35; // Higher starting point
+        // Distance-based penalties for cars (heavier punishment for short trips)
+        let score = 50; // Higher starting point
         
         if (distance <= 5) {
-            score = score - 1.5 * distance; // Reduced penalty for short trips
+            // HEAVY penalty for short trips that should be walked/biked
+            score = score - 4 * distance; // 4 points per km for very short trips
         } else if (distance <= 15) {
-            score = score - 1.5 * 5 - 1 * (distance - 5); // Further reduction for medium trips
+            // Light penalty for medium trips
+            score = score - 4 * 5 - 1.2 * (distance - 5); // 1.2 points per km beyond 5km
         } else if (distance <= 35) {
-            score = score - 1.5 * 5 - 1 * 10 - 0.6 * (distance - 15); // Significant reduction for long trips
+            // Very light penalty for long trips where car is more reasonable
+            score = score - 2.5 * 5 - 1.2 * 10 - 0.6 * (distance - 15); // 0.6 points per km beyond 15km
         } else {
-            score = score - 1.5 * 5 - 1 * 10 - 0.6 * 20 - 0.3 * (distance - 35); // Minimal penalty for very long trips
+            // Minimal penalty for very long trips where car is practical
+            score = score - 2.5 * 5 - 1.2 * 10 - 0.6 * 20 - 0.3 * (distance - 35); // 0.3 points per km beyond 35km
         }
         
-        // Time penalty for idling/traffic (much less severe)
-        let timePenalty = 0.4 * trip.duration;
+        // Time penalty for idling/traffic (heavier for short trips)
+        let timePenalty = 0.6 * trip.duration;
         if (distance > 15) timePenalty *= 0.5; // 50% reduction for long trips
         if (distance > 35) timePenalty *= 0.5; // Additional reduction for very long trips
         
