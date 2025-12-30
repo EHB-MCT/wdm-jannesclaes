@@ -40,6 +40,12 @@ class AdminCharts {
                 'Authorization': `Bearer ${token}`
             }
         });
+        
+        if (!response.ok) {
+            console.error('fetchUserStats error:', response.status, response.statusText);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
         return await response.json();
     }
 
@@ -509,14 +515,15 @@ class AdminCharts {
             
             const userStats = await this.fetchUserStats(userId);
             
-            if (!userStats) {
-                console.error('No user stats received');
+            if (!userStats || userStats.message) {
+                console.error('No user stats received:', userStats);
+                this.showErrorToUser('Geen gebruikersdata beschikbaar');
                 return;
             }
             
             // User Trend Line Chart
             const trendCtx = userTrendCanvas.getContext('2d');
-            const trendData = userStats.tripTrends || [];
+            const trendData = Array.isArray(userStats.tripTrends) ? userStats.tripTrends : [];
             
             if (this.charts.userTrend) {
                 this.charts.userTrend.destroy();
@@ -580,7 +587,7 @@ class AdminCharts {
             
             // User Vehicle Bar Chart
             const vehicleCtx = userVehicleCanvas.getContext('2d');
-            const vehicleData = userStats.vehicleStats || [];
+            const vehicleData = Array.isArray(userStats.vehicleStats) ? userStats.vehicleStats : [];
             
             if (this.charts.userVehicle) {
                 this.charts.userVehicle.destroy();
@@ -813,29 +820,50 @@ class AdminCharts {
         if (!this.charts.distanceEfficiency) return;
         
         let data;
-        if (userId) {
-            const userStats = await this.fetchUserStats(userId);
-            data = userStats.distanceEfficiency;
-        } else {
-            // Get all trips with user info
-            const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-            const response = await fetch(`${window.BACKEND_URL || 'http://localhost:5050'}/api/admin/trips`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
+        try {
+            if (userId) {
+                const userStats = await this.fetchUserStats(userId);
+                if (!userStats || userStats.message) {
+                    console.error('No user stats for distance efficiency chart:', userStats);
+                    data = [];
+                } else {
+                    data = userStats.distanceEfficiency;
                 }
-            });
-            const trips = await response.json();
-            data = trips;
+            } else {
+                // Get all trips with user info
+                const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+                const response = await fetch(`${window.BACKEND_URL || 'http://localhost:5050'}/api/admin/trips`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const trips = await response.json();
+                data = trips;
+            }
+            
+            // Ensure data is an array before mapping
+            const dataArray = Array.isArray(data) ? data : [];
+            
+            const scatterData = dataArray.map(trip => ({
+                x: trip.distance || 0,
+                y: trip.efficiencyScore || 0,
+                label: userId ? trip.vehicle : `${trip.username || 'Onbekend'} - ${trip.vehicle || 'Onbekend'}`
+            }));
+            
+            this.charts.distanceEfficiency.data.datasets[0].data = scatterData;
+            this.charts.distanceEfficiency.update('none');
+            
+        } catch (error) {
+            console.error('Error updating distance efficiency chart:', error);
+            // Set empty data to prevent chart errors
+            this.charts.distanceEfficiency.data.datasets[0].data = [];
+            this.charts.distanceEfficiency.update('none');
         }
-        
-        const scatterData = data.map(trip => ({
-            x: trip.distance || 0,
-            y: trip.efficiencyScore || 0,
-            label: userId ? trip.vehicle : `${trip.username || 'Onbekend'} - ${trip.vehicle || 'Onbekend'}`
-        }));
-        
-        this.charts.distanceEfficiency.data.datasets[0].data = scatterData;
-        this.charts.distanceEfficiency.update('none');
     }
 
     // Show error to user
@@ -902,7 +930,8 @@ class AdminCharts {
             rankingsData.userRankings.forEach(user => {
                 if (!user.username) return;
                 const option = document.createElement('option');
-                option.value = user._id;
+                // Ensure _id is properly converted to string
+                option.value = user._id ? String(user._id) : 'unknown';
                 option.textContent = user.username;
                 select.appendChild(option);
             });
@@ -915,7 +944,10 @@ class AdminCharts {
             
             rankingsData.userRankings.forEach(user => {
                 if (user.username) {
-                    userFilter.appendChild(new Option(user.username, user._id));
+                    // Simplified ObjectId conversion - should work now that backend is fixed
+                    const userIdStr = user._id ? String(user._id) : 'unknown';
+                    const option = new Option(user.username, userIdStr);
+                    userFilter.appendChild(option);
                 }
             });
         }
@@ -944,7 +976,45 @@ window.applyFiltersWithDebounce = async (delay = 300) => {
     if (window.adminChartsInstance) {
         clearTimeout(window.debounceTimer);
         window.debounceTimer = setTimeout(async () => {
-            await window.adminChartsInstance.updateChartsWithFilters({});
+            // Collect filter values with explicit string conversion
+            const performance = document.getElementById('performanceFilter')?.value || 'all';
+            const vehicle = document.getElementById('vehicleFilter')?.value || 'all';
+            const userFilterElement = document.getElementById('userFilter');
+            const dateFrom = document.getElementById('dateFromFilter')?.value || '';
+            const dateTo = document.getElementById('dateToFilter')?.value || '';
+            
+            // Get userId and ensure it's a string
+            let userId = 'all';
+            if (userFilterElement) {
+                const rawValue = userFilterElement.value;
+                
+                // Force string conversion and handle problematic cases
+                if (rawValue && rawValue !== 'all') {
+                    userId = String(rawValue).trim();
+                    
+                    if (userId === '[object Object]' || 
+                        userId.includes('object') || 
+                        userId === 'undefined' || 
+                        userId === 'null' ||
+                        userId.length === 0 ||
+                        userId === 'unknown') {
+                        console.warn('Invalid userId detected, using "all". Value was:', userId);
+                        userId = 'all';
+                    }
+                }
+            }
+            
+            const filters = {
+                performance,
+                vehicle,
+                userId,
+                dateFrom,
+                dateTo
+            };
+            
+
+            
+            await window.adminChartsInstance.updateChartsWithFilters(filters);
         }, delay);
     }
 };

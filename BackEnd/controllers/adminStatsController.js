@@ -277,7 +277,7 @@ const getRankings = async (req, res) => {
           totalEfficiency: 0, 
           totalTrips: 0, 
           totalDistance: 0,
-          _id: trip.userId 
+          _id: trip.userId._id || trip.userId 
         };
       }
       userRankingsMap[username].totalEfficiency += trip.efficiencyScore;
