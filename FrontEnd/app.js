@@ -116,18 +116,18 @@ function toRadians(degrees) {
     return degrees * (Math.PI / 180);
 }
 
-// Get coordinates from OpenStreetMap Nominatim API
+// Get coordinates from backend geocode API
 async function getDestinationCoordinates(destination) {
-    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destination)}`);
+    const response = await fetch(`${BACKEND_URL}/api/geocode/${encodeURIComponent(destination)}`);
     const data = await response.json();
     
-    if (data && data.length > 0) {
+    if (data && data.success) {
         return {
-            lat: parseFloat(data[0].lat),
-            lon: parseFloat(data[0].lon)
+            lat: data.lat,
+            lon: data.lon
         };
     }
-    throw new Error(`Geen coördinaten gevonden voor "${destination}"`);
+    throw new Error(data.message || `Geen coördinaten gevonden voor "${destination}"`);
 }
 
 // Get user's current location

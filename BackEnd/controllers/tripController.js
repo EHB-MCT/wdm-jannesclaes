@@ -4,21 +4,23 @@ const Trip = require('../models/Trip');
 // @route   POST /api/trips (protected)
 exports.createTrip = async (req, res) => {
     try {
-        const { location_a, location_b, vehicle, duration } = req.body;
+        const { location_a, location_b, vehicle, duration, distance } = req.body;
 
-        if (!location_a || !location_b || !vehicle || !duration) {
+        if (!location_a || !location_b || !vehicle || !duration || !distance) {
             return res.status(400).json({ message: "Alle velden zijn verplicht" });
         }
 
         // Convert duration to number if it's a string
         const durationNum = parseInt(duration);
+        const distanceNum = parseFloat(distance);
         
         if (isNaN(durationNum) || durationNum <= 0) {
             return res.status(400).json({ message: "Duur moet een positief getal zijn" });
         }
 
-        // Calculate distance using Haversine formula
-        const distance = calculateDistance(location_a, location_b);
+        if (isNaN(distanceNum) || distanceNum <= 0) {
+            return res.status(400).json({ message: "Afstand moet een positief getal zijn" });
+        }
 
         // Create new trip
         const newTrip = await Trip.create({
@@ -27,7 +29,7 @@ exports.createTrip = async (req, res) => {
             location_b,
             vehicle,
             duration: durationNum,
-            distance,
+            distance: distanceNum,
             createdAt: new Date()
         });
 
