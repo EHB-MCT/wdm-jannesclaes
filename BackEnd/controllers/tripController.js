@@ -136,20 +136,20 @@ function calculateScore(trip) {
         // Distance-based scoring for public transport (peaks at certain distance)
         let score;
         if (distance <= 3) {
-            score = 25; // Inefficient for very short trips
+            score = 55; // Better score for short trips
         } else if (distance <= 12) {
-            score = 45; // Baseline for typical commute
+            score = 70; // Baseline for typical commute
         } else if (distance <= 35) {
-            score = 75; // Optimal range for public transport
+            score = 85; // Optimal range for public transport
         } else {
-            score = 70; // Slightly less optimal for very long trips
+            score = 75; // Slightly less optimal for very long trips
         }
         
         tripObj.efficiencyScore = Math.round(score);
         
     } else if (trip.vehicle === "Fiets" || trip.vehicle === "Anders" || trip.vehicle === "Te Voet") {
         // Active transport with distance caps and diminishing rewards
-        const baseScore = trip.vehicle === "Fiets" ? 95 : 100;
+        const baseScore = trip.vehicle === "Fiets" ? 98 : 100;
         
         let distanceBonus = 0;
         let timeBonus = 0;
@@ -179,10 +179,10 @@ function calculateScore(trip) {
     
     // Status assignment
     const score = tripObj.efficiencyScore;
-    if (score >= 85) {
+    if (score >= 75) {
         tripObj.status = "Eco Warrior";
         tripObj.color = "green";
-    } else if (score >= 25 && score <= 84) {
+    } else if (score >= 25 && score <= 74) {
         tripObj.status = "Eco Neutral";
         tripObj.color = "orange";
     } else {
