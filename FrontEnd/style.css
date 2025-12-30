@@ -70,6 +70,26 @@ body {
     background: white;
 }
 
+.date-filters {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.date-filters input[type="date"] {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    flex: 1;
+}
+
+.date-filters span {
+    color: var(--gray);
+    font-weight: bold;
+}
+
 #userDetailCharts {
     display: grid;
     grid-template-columns: 1fr 1fr;

@@ -106,8 +106,9 @@
                 <div id="admin-filters">
                     <select id="performanceFilter">
                         <option value="all">Alle Ritten</option>
-                        <option value="low">Laag Score (≤30)</option>
-                        <option value="high">Hoog Score (>30)</option>
+                        <option value="criminal">Climate Criminal (<25)</option>
+                        <option value="neutral">Eco Neutral (25-74)</option>
+                        <option value="warrior">Eco Warrior (≥75)</option>
                     </select>
                     
                     <select id="vehicleFilter">
@@ -121,8 +122,14 @@
                     
                     <select id="userFilter">
                         <option value="all">Alle Gebruikers</option>
-                        <option value="lowPerforming">Slecht Presterende Gebruikers</option>
+                        <!-- Individual users will be populated dynamically -->
                     </select>
+                    
+                    <div class="date-filters">
+                        <input type="date" id="dateFromFilter" placeholder="Van datum">
+                        <span>tot</span>
+                        <input type="date" id="dateToFilter" placeholder="Tot datum">
+                    </div>
                     
                     <button id="clearFilters">Filters Wissen</button>
                 </div>

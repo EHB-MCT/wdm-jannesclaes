@@ -4,32 +4,75 @@ const User = require('../models/User');
 // Get overall statistics for admin dashboard
 const getOverviewStats = async (req, res) => {
   try {
+    // Parse filters from query parameters
+    const {
+      performance,
+      vehicle,
+      userId,
+      dateFrom,
+      dateTo
+    } = req.query;
+    
+    // Build match stage for filtering
+    const matchStage = {};
+    
+    // Vehicle filter
+    if (vehicle && vehicle !== 'all') {
+      matchStage.vehicle = vehicle;
+    }
+    
+    // User filter
+    if (userId && userId !== 'all') {
+      matchStage.userId = userId;
+    }
+    
+    // Date range filter (1 year default)
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    
+    const fromDate = dateFrom ? new Date(dateFrom) : oneYearAgo;
+    const toDate = dateTo ? new Date(dateTo) : new Date();
+    
+    matchStage.createdAt = {
+      $gte: fromDate,
+      $lte: toDate
+    };
+    
+    // Performance filter
+    const performanceScoreFilter = {};
+    if (performance === 'criminal') {
+      matchStage.efficiencyScore = { $lt: 25 };
+    } else if (performance === 'neutral') {
+      matchStage.efficiencyScore = { $gte: 25, $lte: 74 };
+    } else if (performance === 'warrior') {
+      matchStage.efficiencyScore = { $gte: 75 };
+    }
+    
     const totalUsers = await User.countDocuments();
-    const totalTrips = await Trip.countDocuments();
+    const totalTrips = await Trip.countDocuments(matchStage);
     
     // Average efficiency score
     const avgEfficiency = await Trip.aggregate([
+      { $match: matchStage },
       { $group: { _id: null, avgScore: { $avg: '$efficiencyScore' } } }
     ]);
 
     // Vehicle usage distribution
     const vehicleStats = await Trip.aggregate([
+      { $match: matchStage },
       { $group: { _id: '$vehicle', count: { $sum: 1 } } },
       { $sort: { count: -1 } }
     ]);
 
     // User performance distribution
     const performanceStats = await Trip.aggregate([
+      { $match: matchStage },
       { $group: { _id: '$status', count: { $sum: 1 } } }
     ]);
 
-    // Monthly activity (last 6 months)
+    // Monthly activity (last 12 months with filters)
     const monthlyActivity = await Trip.aggregate([
-      {
-        $match: {
-          createdAt: { $gte: new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000) }
-        }
-      },
+      { $match: matchStage },
       {
         $group: {
           _id: {
@@ -43,13 +86,9 @@ const getOverviewStats = async (req, res) => {
       { $sort: { '_id.year': 1, '_id.month': 1 } }
     ]);
 
-    // Performance trend (efficiency over time)
+    // Performance trend (efficiency over time with filters)
     const performanceTrend = await Trip.aggregate([
-      {
-        $match: {
-          createdAt: { $gte: new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000) }
-        }
-      },
+      { $match: matchStage },
       {
         $group: {
           _id: {
@@ -131,8 +170,52 @@ const getUserStats = async (req, res) => {
 // Get rankings and comparisons
 const getRankings = async (req, res) => {
   try {
+    // Parse filters from query parameters
+    const {
+      performance,
+      vehicle,
+      userId,
+      dateFrom,
+      dateTo
+    } = req.query;
+    
+    // Build match stage for filtering
+    const matchStage = {};
+    
+    // Vehicle filter
+    if (vehicle && vehicle !== 'all') {
+      matchStage.vehicle = vehicle;
+    }
+    
+    // User filter
+    if (userId && userId !== 'all') {
+      matchStage.userId = userId;
+    }
+    
+    // Date range filter (1 year default)
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    
+    const fromDate = dateFrom ? new Date(dateFrom) : oneYearAgo;
+    const toDate = dateTo ? new Date(dateTo) : new Date();
+    
+    matchStage.createdAt = {
+      $gte: fromDate,
+      $lte: toDate
+    };
+    
+    // Performance filter
+    if (performance === 'criminal') {
+      matchStage.efficiencyScore = { $lt: 25 };
+    } else if (performance === 'neutral') {
+      matchStage.efficiencyScore = { $gte: 25, $lte: 74 };
+    } else if (performance === 'warrior') {
+      matchStage.efficiencyScore = { $gte: 75 };
+    }
+    
     // User rankings by average efficiency
     const userRankings = await Trip.aggregate([
+      { $match: matchStage },
       {
         $group: {
           _id: '$userId',
@@ -163,6 +246,7 @@ const getRankings = async (req, res) => {
 
     // Time pattern analysis (trips by hour of day)
     const hourlyPatterns = await Trip.aggregate([
+      { $match: matchStage },
       {
         $group: {
           _id: { $hour: '$createdAt' },
@@ -174,6 +258,7 @@ const getRankings = async (req, res) => {
 
     // Environmental impact totals
     const impactByVehicle = await Trip.aggregate([
+      { $match: matchStage },
       {
         $group: {
           _id: '$vehicle',

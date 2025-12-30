@@ -73,9 +73,12 @@ class AdminCharts {
     }
 
     // API calls
-    async fetchOverviewStats() {
+    async fetchOverviewStats(filters = {}) {
         const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-        const response = await fetch(`${window.BACKEND_URL || 'http://localhost:5050'}/api/admin/stats/overview`, {
+        const queryString = new URLSearchParams(filters).toString();
+        const url = `${window.BACKEND_URL || 'http://localhost:5050'}/api/admin/stats/overview${queryString ? '?' + queryString : ''}`;
+        
+        const response = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -93,9 +96,12 @@ class AdminCharts {
         return await response.json();
     }
 
-    async fetchRankings() {
+    async fetchRankings(filters = {}) {
         const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-        const response = await fetch(`${window.BACKEND_URL || 'http://localhost:5050'}/api/admin/stats/rankings`, {
+        const queryString = new URLSearchParams(filters).toString();
+        const url = `${window.BACKEND_URL || 'http://localhost:5050'}/api/admin/stats/rankings${queryString ? '?' + queryString : ''}`;
+        
+        const response = await fetch(url, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -557,6 +563,7 @@ class AdminCharts {
     async loadUserSelection() {
         const rankingsData = await this.fetchRankings();
         const select = document.getElementById('userDetailSelect');
+        const userFilter = document.getElementById('userFilter');
         
         // Clear existing options except first one
         while (select.options.length > 1) {
@@ -569,6 +576,16 @@ class AdminCharts {
             option.textContent = user.username;
             select.appendChild(option);
         });
+        
+        // Also populate admin user filter
+        if (userFilter) {
+            userFilter.innerHTML = '';
+            userFilter.appendChild(new Option('Alle Gebruikers', 'all'));
+            
+            rankingsData.userRankings.forEach(user => {
+                userFilter.appendChild(new Option(user.username, user._id));
+            });
+        }
         
         // Add event listener
         select.addEventListener('change', async (e) => {
@@ -583,6 +600,161 @@ class AdminCharts {
     }
 
 
+
+    // Update all charts with filters
+    async updateChartsWithFilters(filters = {}) {
+        try {
+            console.log('Updating charts with filters:', filters);
+            
+            const overviewData = await this.fetchOverviewStats(filters);
+            const rankingsData = await this.fetchRankings(filters);
+            
+            console.log('Filtered overview data:', overviewData);
+            console.log('Filtered rankings data:', rankingsData);
+            
+            // Update all charts with filtered data
+            this.updateVehicleUsageChart(overviewData.vehicleStats);
+            this.updateMonthlyActivityChart(overviewData.monthlyActivity);
+            this.updateUserRankingsChart(rankingsData.userRankings);
+            this.updateHourlyPatternsChart(rankingsData.hourlyPatterns);
+            this.updateEnvironmentalImpactChart(rankingsData.impactByVehicle);
+            
+            // Update performance trend chart
+            if (overviewData.performanceTrend && overviewData.performanceTrend.length > 0) {
+                this.updatePerformanceTrendChart(overviewData.performanceTrend);
+            }
+            
+            // Update distance efficiency chart
+            if (filters.userId) {
+                await this.updateDistanceEfficiencyChart(filters.userId);
+            } else {
+                await this.updateDistanceEfficiencyChart();
+            }
+            
+            console.log('Charts updated with filters successfully!');
+            
+        } catch (error) {
+            console.error('Error updating charts with filters:', error);
+        }
+    }
+
+    // Update methods for existing charts (update data without recreating)
+    updateVehicleUsageChart(vehicleStats) {
+        if (!this.charts.vehicleUsage) return;
+        if (!vehicleStats || vehicleStats.length === 0) return;
+        
+        const labels = vehicleStats.map(item => item._id);
+        const data = vehicleStats.map(item => item.count);
+        
+        this.charts.vehicleUsage.data.labels = labels;
+        this.charts.vehicleUsage.data.datasets[0].data = data;
+        this.charts.vehicleUsage.update('none'); // Use 'none' for immediate update
+    }
+
+    updateMonthlyActivityChart(monthlyActivity) {
+        if (!this.charts.monthlyActivity) return;
+        if (!monthlyActivity || monthlyActivity.length === 0) return;
+        
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const labels = monthlyActivity.map(item => `${monthNames[item._id.month - 1]} ${item._id.year}`);
+        const data = monthlyActivity.map(item => item.count);
+        
+        this.charts.monthlyActivity.data.labels = labels;
+        this.charts.monthlyActivity.data.datasets[0].data = data;
+        this.charts.monthlyActivity.update('none');
+    }
+
+    updateUserRankingsChart(userRankings) {
+        if (!this.charts.userRankings) return;
+        if (!userRankings || userRankings.length === 0) return;
+        
+        const topUsers = userRankings.slice(0, 10);
+        const labels = topUsers.map(user => user.username);
+        const data = topUsers.map(user => Math.round(user.avgEfficiency));
+        
+        this.charts.userRankings.data.labels = labels;
+        this.charts.userRankings.data.datasets[0].data = data;
+        this.charts.userRankings.update('none');
+    }
+
+    updateHourlyPatternsChart(hourlyPatterns) {
+        if (!this.charts.hourlyPatterns) return;
+        if (!hourlyPatterns || hourlyPatterns.length === 0) {
+            // Show empty chart with all zeros
+            const hourlyData = new Array(24).fill(0);
+            const labels = Array.from({length: 24}, (_, i) => `${i}:00`);
+            this.charts.hourlyPatterns.data.labels = labels;
+            this.charts.hourlyPatterns.data.datasets[0].data = hourlyData;
+            this.charts.hourlyPatterns.update('none');
+            return;
+        }
+        
+        const hourlyData = new Array(24).fill(0);
+        hourlyPatterns.forEach(item => {
+            hourlyData[item._id] = item.count;
+        });
+        
+        const labels = Array.from({length: 24}, (_, i) => `${i}:00`);
+        
+        this.charts.hourlyPatterns.data.labels = labels;
+        this.charts.hourlyPatterns.data.datasets[0].data = hourlyData;
+        this.charts.hourlyPatterns.update('none');
+    }
+
+    updateEnvironmentalImpactChart(impactByVehicle) {
+        if (!this.charts.environmentalImpact) return;
+        if (!impactByVehicle || impactByVehicle.length === 0) return;
+        
+        const labels = impactByVehicle.map(item => item._id);
+        const avgEfficiency = impactByVehicle.map(item => Math.round(item.avgEfficiency));
+        const totalDistance = impactByVehicle.map(item => Math.round(item.totalDistance));
+        
+        this.charts.environmentalImpact.data.labels = labels;
+        this.charts.environmentalImpact.data.datasets[0].data = avgEfficiency;
+        this.charts.environmentalImpact.data.datasets[1].data = totalDistance;
+        this.charts.environmentalImpact.update('none');
+    }
+
+    updatePerformanceTrendChart(performanceTrend) {
+        if (!this.charts.performanceTrend) return;
+        if (!performanceTrend || performanceTrend.length === 0) return;
+        
+        const labels = performanceTrend.map(item => `${item._id.month}/${item._id.year}`);
+        const data = performanceTrend.map(item => Math.round(item.avgScore || 0));
+        
+        this.charts.performanceTrend.data.labels = labels;
+        this.charts.performanceTrend.data.datasets[0].data = data;
+        this.charts.performanceTrend.update('none');
+    }
+
+    async updateDistanceEfficiencyChart(userId = null) {
+        if (!this.charts.distanceEfficiency) return;
+        
+        let data;
+        if (userId) {
+            const userStats = await this.fetchUserStats(userId);
+            data = userStats.distanceEfficiency;
+        } else {
+            // Get all trips with user info
+            const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+            const response = await fetch(`${window.BACKEND_URL || 'http://localhost:5050'}/api/admin/trips`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const trips = await response.json();
+            data = trips;
+        }
+        
+        const scatterData = data.map(trip => ({
+            x: trip.distance,
+            y: trip.efficiencyScore,
+            label: userId ? trip.vehicle : `${trip.username} - ${trip.vehicle}`
+        }));
+        
+        this.charts.distanceEfficiency.data.datasets[0].data = scatterData;
+        this.charts.distanceEfficiency.update('none');
+    }
 
     // Update all charts
     async updateAllCharts() {

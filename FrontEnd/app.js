@@ -68,16 +68,27 @@ function setupEventListeners() {
     const performanceFilter = document.getElementById('performanceFilter');
     const vehicleFilter = document.getElementById('vehicleFilter');
     const userFilter = document.getElementById('userFilter');
+    const dateFromFilter = document.getElementById('dateFromFilter');
+    const dateToFilter = document.getElementById('dateToFilter');
     const clearFilters = document.getElementById('clearFilters');
     
+    // Add debouncing for date inputs to prevent excessive API calls
+    let debounceTimer;
+    
     if (performanceFilter) {
-        performanceFilter.addEventListener('change', applyFilters);
+        performanceFilter.addEventListener('change', () => applyFiltersWithDebounce(100));
     }
     if (vehicleFilter) {
-        vehicleFilter.addEventListener('change', applyFilters);
+        vehicleFilter.addEventListener('change', () => applyFiltersWithDebounce(100));
     }
     if (userFilter) {
-        userFilter.addEventListener('change', applyFilters);
+        userFilter.addEventListener('change', () => applyFiltersWithDebounce(100));
+    }
+    if (dateFromFilter) {
+        dateFromFilter.addEventListener('change', () => applyFiltersWithDebounce(300));
+    }
+    if (dateToFilter) {
+        dateToFilter.addEventListener('change', () => applyFiltersWithDebounce(300));
     }
     if (clearFilters) {
         clearFilters.addEventListener('click', clearAllFilters);
@@ -287,22 +298,29 @@ function checkAuthStatus() {
         fetch(`${BACKEND_URL}/api/auth/profile`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
-        .then(response => response.json())
-        .then(data => {
+        .then(response => {
             if (response.ok) {
-                currentUser = data.user;
-                showTripSection();
-                loadTrips();
-                
-                // Start telemetry tracking for existing valid token
-                if (window.telemetryTracking) {
-                    window.telemetryTracking.start();
-                }
+                return response.json();
             } else {
-                showAuthSection();
+                throw new Error('Token invalid');
             }
         })
-        .catch(() => showAuthSection());
+        .then(data => {
+            currentUser = data.user;
+            showTripSection();
+            loadTrips();
+            
+            // Start telemetry tracking for existing valid token
+            if (window.telemetryTracking) {
+                window.telemetryTracking.start();
+            }
+        })
+        .catch(() => {
+            // Clear invalid tokens and show auth section
+            localStorage.removeItem('authToken');
+            sessionStorage.removeItem('authToken');
+            showAuthSection();
+        });
     } else {
         showAuthSection();
     }
@@ -344,6 +362,21 @@ function showAdminSection() {
     tripSection.style.display = 'none';
     adminSection.style.display = 'block';
     loadAllTrips();
+    
+    // Set default date filters (1 year back)
+    const dateFromFilter = document.getElementById('dateFromFilter');
+    const dateToFilter = document.getElementById('dateToFilter');
+    
+    if (dateFromFilter && !dateFromFilter.value) {
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        dateFromFilter.value = oneYearAgo.toISOString().split('T')[0];
+    }
+    
+    if (dateToFilter && !dateToFilter.value) {
+        const today = new Date();
+        dateToFilter.value = today.toISOString().split('T')[0];
+    }
     
     // Initialize admin charts if not already done
     if (!adminCharts) {
@@ -747,6 +780,89 @@ function applyFilters() {
     }
     
     displayTrips(filteredTrips);
+}
+
+// Debounced filter application with chart updates
+function applyFiltersWithDebounce(delay = 300) {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        applyFiltersWithCharts();
+    }, delay);
+}
+
+// Get current filter values
+function getCurrentFilters() {
+    const performanceFilter = document.getElementById('performanceFilter');
+    const vehicleFilter = document.getElementById('vehicleFilter');
+    const userFilter = document.getElementById('userFilter');
+    const dateFromFilter = document.getElementById('dateFromFilter');
+    const dateToFilter = document.getElementById('dateToFilter');
+    
+    const filters = {
+        performance: performanceFilter ? performanceFilter.value : 'all',
+        vehicle: vehicleFilter ? vehicleFilter.value : 'all',
+        userId: userFilter ? userFilter.value : 'all'
+    };
+    
+    // Add date filters if set
+    if (dateFromFilter && dateFromFilter.value) {
+        filters.dateFrom = dateFromFilter.value;
+    }
+    if (dateToFilter && dateToFilter.value) {
+        filters.dateTo = dateToFilter.value;
+    }
+    
+    return filters;
+}
+
+// Apply filters and update both table and charts
+async function applyFiltersWithCharts() {
+    try {
+        const filters = getCurrentFilters();
+        console.log('Applying filters:', filters);
+        
+        // Update trips table (existing logic)
+        let filteredTrips = [...allTrips];
+        
+        // Apply same filter logic to trips table
+        if (filters.performance === 'criminal') {
+            filteredTrips = filteredTrips.filter(trip => trip.efficiencyScore < 25);
+        } else if (filters.performance === 'neutral') {
+            filteredTrips = filteredTrips.filter(trip => trip.efficiencyScore >= 25 && trip.efficiencyScore <= 74);
+        } else if (filters.performance === 'warrior') {
+            filteredTrips = filteredTrips.filter(trip => trip.efficiencyScore >= 75);
+        }
+        
+        if (filters.vehicle !== 'all') {
+            filteredTrips = filteredTrips.filter(trip => trip.vehicle === filters.vehicle);
+        }
+        
+        // User filter
+        if (filters.userId && filters.userId !== 'all') {
+            filteredTrips = filteredTrips.filter(trip => trip.userId === filters.userId);
+        }
+        
+        // Date filtering for trips table
+        if (filters.dateFrom) {
+            const fromDate = new Date(filters.dateFrom);
+            filteredTrips = filteredTrips.filter(trip => new Date(trip.createdAt) >= fromDate);
+        }
+        if (filters.dateTo) {
+            const toDate = new Date(filters.dateTo);
+            toDate.setHours(23, 59, 59, 999); // End of day
+            filteredTrips = filteredTrips.filter(trip => new Date(trip.createdAt) <= toDate);
+        }
+        
+        displayTrips(filteredTrips);
+        
+        // Update charts with filters
+        if (adminCharts) {
+            await adminCharts.updateChartsWithFilters(filters);
+        }
+        
+    } catch (error) {
+        console.error('Error applying filters:', error);
+    }
 }
 
 function clearAllFilters() {
