@@ -502,24 +502,39 @@ async function createTrip(trip) {
 
             loadTrips(); // Lijst verversen
             
-            // Build comprehensive alert with behavioral analysis
-            let alertMessage = `Je score: ${result.efficiencyScore}\nOordeel: ${result.status}`;
+            // Build comprehensive behavioral analysis display
+            const efficiencyMessage = `Efficiëntie Score: ${result.efficiencyScore}\nStatus: ${result.status}`;
             
             // Add behavioral analysis if available
             if (result.behavioralAnalysis) {
                 const analysis = result.behavioralAnalysis;
-                alertMessage += `\n\n📊 BEHAVIORAL PROFILING RESULTATEN:`;
-                alertMessage += `\n🏷️  Labels: ${analysis.behavioralTags.join(', ')}`;
-                alertMessage += `\n📈 Hesitation: ${(analysis.metrics.hesitationScore * 100).toFixed(1)}%`;
-                alertMessage += `\n⚡ Decision Efficiency: ${(analysis.metrics.decisionEfficiency * 100).toFixed(1)}%`;
-                alertMessage += `\n🖱️  Movement Efficiency: ${(analysis.metrics.movementEfficiency * 100).toFixed(1)}%`;
-                alertMessage += `\n🧩 Interaction Complexity: ${(analysis.metrics.interactionComplexity * 100).toFixed(1)}%`;
-                alertMessage += `\n🧠 Cognitive Load: ${(analysis.metrics.cognitiveLoad * 100).toFixed(1)}%`;
-                alertMessage += `\n📊 Data Points Analyzed: ${analysis.dataPoints}`;
-                alertMessage += `\n\n⚠️  Dit is een "Weapon of Math Destruction" - bias algoritme voor educatieve doeleinden`;
+                
+                // Prepare analysis data for charts
+                const analysisData = {
+                    hesitationScore: analysis.metrics.hesitationScore,
+                    decisionEfficiency: analysis.metrics.decisionEfficiency,
+                    movementEfficiency: analysis.metrics.movementEfficiency,
+                    interactionComplexity: analysis.metrics.interactionComplexity,
+                    cognitiveLoad: analysis.metrics.cognitiveLoad,
+                    behavioralTags: analysis.behavioralTags,
+                    dataPoints: analysis.dataPoints
+                };
+                
+                // Show basic alert first
+                alert(efficiencyMessage);
+                
+                // Then show detailed behavioral analysis modal
+                if (window.adminChartsInstance) {
+                    window.adminChartsInstance.showBehavioralAnalysisModal(analysisData, 'Gebruiker');
+                } else {
+                    // Fallback: create charts instance if not available
+                    window.adminChartsInstance = new AdminCharts();
+                    window.adminChartsInstance.showBehavioralAnalysisModal(analysisData, 'Gebruiker');
+                }
+            } else {
+                // Simple alert if no behavioral analysis
+                alert(efficiencyMessage);
             }
-            
-            alert(alertMessage);
             
             // Reset form
             document.getElementById("inputDestination").value = "";

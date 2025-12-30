@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   front_end:
     build:
@@ -22,7 +20,6 @@ services:
       - MONGO_URI=mongodb://wmd_mongo:27017/wmd_project
     volumes:
       - ./BackEnd:/usr/src/app
-      - /usr/src/app/node_modules
     depends_on:
       - mongodb
 

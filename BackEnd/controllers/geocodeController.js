@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+// Node.js 18+ has built-in fetch, no need for node-fetch
 
 // @desc    Geocode destination using OpenStreetMap Nominatim API
 // @route   GET /api/geocode/:destination

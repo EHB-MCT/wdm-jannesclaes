@@ -590,3 +590,202 @@ body {
     background-color: #5a6268;
 }
 
+/* Behavioral Analysis Modal */
+.behavioral-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    overflow-y: auto;
+}
+
+.behavioral-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.behavioral-modal-content {
+    background-color: white;
+    margin: 20px;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    max-width: 900px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.behavioral-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--red);
+}
+
+.behavioral-modal-title {
+    font-size: 1.8rem;
+    color: var(--red);
+    font-family: 'Saira Stencil One', sans-serif;
+    margin: 0;
+}
+
+.behavioral-modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #666;
+    cursor: pointer;
+    padding: 5px;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.behavioral-modal-close:hover {
+    color: var(--red);
+}
+
+.behavioral-modal-body {
+    display: grid;
+    gap: 25px;
+}
+
+.behavioral-summary {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 5px solid var(--red);
+}
+
+.behavioral-summary h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 1.2rem;
+}
+
+.behavioral-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.metric-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px;
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.metric-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--red);
+}
+
+.metric-label {
+    font-size: 0.9rem;
+    color: #666;
+    text-align: center;
+    margin-top: 5px;
+}
+
+.behavioral-charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 25px;
+}
+
+.behavioral-chart-container {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.behavioral-chart-container h4 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.behavioral-chart-container canvas {
+    width: 100% !important;
+    height: 300px !important;
+}
+
+.behavioral-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.behavioral-tag {
+    background: var(--red);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.behavioral-warning {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.behavioral-warning strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #d63018;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .behavioral-modal-content {
+        margin: 10px;
+        padding: 20px;
+        width: 95%;
+    }
+    
+    .behavioral-charts-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .behavioral-metrics {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+    
+    .behavioral-chart-container canvas {
+        height: 250px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .behavioral-modal-title {
+        font-size: 1.4rem;
+    }
+    
+    .behavioral-metrics {
+        grid-template-columns: 1fr;
+    }
+}
+

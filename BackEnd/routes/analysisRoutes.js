@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { calculateBehavioralProfile } = require('../controllers/analysisController');
+const { calculateBehavioralProfile, getAverageBehavioralData } = require('../controllers/analysisController');
 const authenticate = require('../middleware/auth');
 const User = require('../models/User');
 
@@ -266,6 +266,34 @@ router.get('/metrics', authenticate, async (req, res) => {
         console.error('[SYSTEM METRICS ROUTE ERROR]:', error);
         res.status(500).json({ 
             message: "Failed to retrieve system metrics",
+            error: error.message
+        });
+    }
+});
+
+/**
+ * GET /api/analyze/average
+ * 
+ * GET AVERAGE BEHAVIORAL DATA - For comparative analysis
+ * Provides system-wide average metrics for comparison purposes
+ */
+router.get('/average', authenticate, async (req, res) => {
+    try {
+        // Any authenticated user can get average data for comparison
+        const averageData = await getAverageBehavioralData();
+        
+        res.json({
+            success: true,
+            message: "Average behavioral data retrieved successfully",
+            data: averageData,
+            disclaimer: "These averages are based on the same biased algorithms used for individual analysis",
+            educationalNote: "Averages can hide individual differences and create false 'norms' that users feel pressured to match"
+        });
+
+    } catch (error) {
+        console.error('[AVERAGE DATA ROUTE ERROR]:', error);
+        res.status(500).json({ 
+            message: "Failed to retrieve average behavioral data",
             error: error.message
         });
     }

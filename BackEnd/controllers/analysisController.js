@@ -416,7 +416,67 @@ const updateUserAnalysis = async (userId, analysisResult) => {
     });
 };
 
+/**
+ * GET AVERAGE BEHAVIORAL DATA - For comparative analysis
+ * This function calculates system-wide average behavioral metrics
+ */
+const getAverageBehavioralData = async () => {
+    try {
+        // Get all users with analysis data
+        const users = await User.find({
+            'analysis.hesitationScore': { $exists: true }
+        }).select('analysis').lean();
+
+        if (users.length === 0) {
+            return {
+                hesitationScore: 0.3,
+                decisionEfficiency: 0.6,
+                movementEfficiency: 0.7,
+                interactionComplexity: 0.4,
+                cognitiveLoad: 0.5
+            };
+        }
+
+        // Calculate averages
+        const totals = users.reduce((acc, user) => {
+            acc.hesitationScore += user.analysis.hesitationScore || 0;
+            acc.decisionEfficiency += user.analysis.decisionEfficiency || 0;
+            acc.movementEfficiency += user.analysis.movementEfficiency || 0;
+            acc.interactionComplexity += user.analysis.interactionComplexity || 0;
+            acc.cognitiveLoad += user.analysis.cognitiveLoad || 0;
+            return acc;
+        }, {
+            hesitationScore: 0,
+            decisionEfficiency: 0,
+            movementEfficiency: 0,
+            interactionComplexity: 0,
+            cognitiveLoad: 0
+        });
+
+        const count = users.length;
+        return {
+            hesitationScore: totals.hesitationScore / count,
+            decisionEfficiency: totals.decisionEfficiency / count,
+            movementEfficiency: totals.movementEfficiency / count,
+            interactionComplexity: totals.interactionComplexity / count,
+            cognitiveLoad: totals.cognitiveLoad / count
+        };
+
+    } catch (error) {
+        console.error('Error calculating average behavioral data:', error);
+        // Return fallback data
+        return {
+            hesitationScore: 0.3,
+            decisionEfficiency: 0.6,
+            movementEfficiency: 0.7,
+            interactionComplexity: 0.4,
+            cognitiveLoad: 0.5
+        };
+    }
+};
+
 // Export the dangerous analysis function
 module.exports = {
-    calculateBehavioralProfile
+    calculateBehavioralProfile,
+    getAverageBehavioralData
 };
