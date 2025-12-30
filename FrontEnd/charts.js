@@ -19,59 +19,6 @@ class AdminCharts {
         };
     }
 
-    // Initialize all charts
-    async initializeCharts() {
-        try {
-            console.log('Initializing admin charts...');
-            
-
-            
-            const overviewData = await this.fetchOverviewStats();
-            console.log('Overview data:', overviewData);
-            console.log('Performance trend data:', overviewData.performanceTrend);
-            const rankingsData = await this.fetchRankings();
-            console.log('Rankings data:', rankingsData);
-            
-            // Wait a bit for DOM to be ready
-            setTimeout(() => {
-                console.log('Creating charts...');
-                this.createVehicleUsageChart(overviewData.vehicleStats);
-                console.log('✓ Vehicle usage chart created');
-                
-                this.createMonthlyActivityChart(overviewData.monthlyActivity);
-                console.log('✓ Monthly activity chart created');
-                
-                this.createUserRankingsChart(rankingsData.userRankings);
-                console.log('✓ User rankings chart created');
-                
-                this.createHourlyPatternsChart(rankingsData.hourlyPatterns);
-                console.log('✓ Hourly patterns chart created');
-                
-                this.createEnvironmentalImpactChart(rankingsData.impactByVehicle);
-                console.log('✓ Environmental impact chart created');
-                
-                // Create performance trend chart
-                if (overviewData.performanceTrend && overviewData.performanceTrend.length > 0) {
-                    this.createPerformanceTrendChart(overviewData.performanceTrend);
-                    console.log('✓ Performance trend chart created');
-                }
-                
-                // Create distance efficiency chart
-                this.createDistanceEfficiencyChart();
-                console.log('✓ Distance efficiency chart created');
-                
-            }, 100);
-            
-            // Load user selection
-            await this.loadUserSelection();
-            
-            console.log('All charts initialized successfully!');
-            
-        } catch (error) {
-            console.error('Error initializing charts:', error);
-        }
-    }
-
     // API calls
     async fetchOverviewStats(filters = {}) {
         const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
@@ -125,8 +72,8 @@ class AdminCharts {
         const ctx = canvas.getContext('2d');
         console.log('Creating vehicle usage chart with data:', vehicleStats);
         
-        const labels = vehicleStats.map(item => item._id);
-        const data = vehicleStats.map(item => item.count);
+        const labels = vehicleStats.map(item => item._id || 'Onbekend');
+        const data = vehicleStats.map(item => item.count || 0);
         
         this.charts.vehicleUsage = new Chart(ctx, {
             type: 'bar',
@@ -135,13 +82,7 @@ class AdminCharts {
                 datasets: [{
                     label: 'Aantal Ritten',
                     data: data,
-                    backgroundColor: [
-                        this.colors.primary,
-                        this.colors.secondary, 
-                        this.colors.tertiary,
-                        this.colors.quaternary,
-                        this.colors.quinary
-                    ],
+                    backgroundColor: this.colors.primary,
                     borderWidth: 1
                 }]
             },
@@ -177,10 +118,11 @@ class AdminCharts {
         console.log('Creating monthly activity chart with data:', monthlyActivity);
         
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const labels = monthlyActivity.map(item => 
-            `${monthNames[item._id.month - 1]} ${item._id.year}`
-        );
-        const data = monthlyActivity.map(item => item.count);
+        const labels = monthlyActivity.map(item => {
+            if (!item._id || !item._id.month || !item._id.year) return 'Onbekend';
+            return `${monthNames[item._id.month - 1]} ${item._id.year}`;
+        });
+        const data = monthlyActivity.map(item => item.count || 0);
         
         this.charts.monthlyActivity = new Chart(ctx, {
             type: 'bar',
@@ -222,11 +164,11 @@ class AdminCharts {
         }
         
         const ctx = canvas.getContext('2d');
+        console.log('Creating user rankings chart with data:', userRankings);
         
-        // Take top 10 users
         const topUsers = userRankings.slice(0, 10);
-        const labels = topUsers.map(user => user.username);
-        const data = topUsers.map(user => Math.round(user.avgEfficiency));
+        const labels = topUsers.map(user => user.username || 'Onbekend');
+        const data = topUsers.map(user => Math.round(user.avgEfficiency || 0));
         
         this.charts.userRankings = new Chart(ctx, {
             type: 'bar',
@@ -267,12 +209,17 @@ class AdminCharts {
         }
         
         const ctx = canvas.getContext('2d');
+        console.log('Creating hourly patterns chart with data:', hourlyPatterns);
         
-        // Create array for all 24 hours
         const hourlyData = new Array(24).fill(0);
-        hourlyPatterns.forEach(item => {
-            hourlyData[item._id] = item.count;
-        });
+        
+        if (hourlyPatterns && hourlyPatterns.length > 0) {
+            hourlyPatterns.forEach(item => {
+                if (item._id >= 0 && item._id <= 23) {
+                    hourlyData[item._id] = item.count;
+                }
+            });
+        }
         
         const labels = Array.from({length: 24}, (_, i) => `${i}:00`);
         
@@ -318,10 +265,13 @@ class AdminCharts {
         }
         
         const ctx = canvas.getContext('2d');
+        console.log('Creating environmental impact chart with data:', impactByVehicle);
         
-        const labels = impactByVehicle.map(item => item._id);
-        const avgEfficiency = impactByVehicle.map(item => Math.round(item.avgEfficiency));
-        const totalDistance = impactByVehicle.map(item => Math.round(item.totalDistance));
+        if (!impactByVehicle || impactByVehicle.length === 0) return;
+        
+        const labels = impactByVehicle.map(item => item._id || 'Onbekend');
+        const avgEfficiency = impactByVehicle.map(item => Math.round(item.avgEfficiency || 0));
+        const totalDistance = impactByVehicle.map(item => Math.round(item.totalDistance || 0));
         
         this.charts.environmentalImpact = new Chart(ctx, {
             type: 'bar',
@@ -333,7 +283,7 @@ class AdminCharts {
                     backgroundColor: this.colors.secondary,
                     borderWidth: 1
                 }, {
-                    label: 'Totale Afstand (km)',
+                    label: 'Totaal Afstand (km)',
                     data: totalDistance,
                     backgroundColor: this.colors.tertiary,
                     borderWidth: 1
@@ -352,7 +302,7 @@ class AdminCharts {
     }
 
     // Performance Trend Line Chart
-    createPerformanceTrendChart(performanceData) {
+    createPerformanceTrendChart(performanceTrend) {
         const canvas = document.getElementById('performanceTrendChart');
         if (!canvas) {
             console.error('Performance trend canvas not found!');
@@ -365,14 +315,23 @@ class AdminCharts {
         }
         
         const ctx = canvas.getContext('2d');
+        console.log('Creating performance trend chart with data:', performanceTrend);
+        
+        if (!performanceTrend || performanceTrend.length === 0) return;
+        
+        const labels = performanceTrend.map(item => {
+            if (!item._id || !item._id.month || !item._id.year) return 'Onbekend';
+            return `${item._id.month}/${item._id.year}`;
+        });
+        const data = performanceTrend.map(item => Math.round(item.avgScore || 0));
         
         this.charts.performanceTrend = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: performanceData.map(item => `${item._id.month}/${item._id.year}`),
+                labels: labels,
                 datasets: [{
                     label: 'Gemiddelde Efficiëntie',
-                    data: performanceData.map(item => Math.round(item.avgScore || item.avgEfficiency || 0)),
+                    data: data,
                     borderColor: this.colors.primary,
                     backgroundColor: this.colors.primary + '20',
                     fill: true,
@@ -424,14 +383,10 @@ class AdminCharts {
         }
         
         const scatterData = data.map(trip => ({
-            x: trip.distance,
-            y: trip.efficiencyScore,
-            label: userId ? trip.vehicle : `${trip.username} - ${trip.vehicle}`
+            x: trip.distance || 0,
+            y: trip.efficiencyScore || 0,
+            label: userId ? trip.vehicle : `${trip.username || 'Onbekend'} - ${trip.vehicle || 'Onbekend'}`
         }));
-        
-        if (this.charts.distanceEfficiency) {
-            this.charts.distanceEfficiency.destroy();
-        }
         
         this.charts.distanceEfficiency = new Chart(ctx, {
             type: 'scatter',
@@ -468,41 +423,183 @@ class AdminCharts {
         });
     }
 
+    // Initialize all charts
+    async initializeCharts() {
+        try {
+            console.log('Initializing admin charts...');
+            
+            // Wait for DOM to be ready
+            if (document.readyState === 'loading') {
+                await new Promise(resolve => {
+                    document.addEventListener('DOMContentLoaded', resolve);
+                });
+            }
+            
+            // Wait for chart canvases to be available
+            let attempts = 0;
+            const maxAttempts = 20;
+            
+            while (attempts < maxAttempts) {
+                const vehicleCanvas = document.getElementById('vehicleUsageChart');
+                if (vehicleCanvas) break;
+                
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            
+            if (attempts >= maxAttempts) {
+                throw new Error('Chart canvases not found after waiting');
+            }
+            
+            const overviewData = await this.fetchOverviewStats();
+            console.log('Overview data:', overviewData);
+            console.log('Performance trend data:', overviewData.performanceTrend);
+            const rankingsData = await this.fetchRankings();
+            console.log('Rankings data:', rankingsData);
+            
+            console.log('Creating charts...');
+            this.createVehicleUsageChart(overviewData.vehicleStats);
+            console.log('✓ Vehicle usage chart created');
+            
+            this.createMonthlyActivityChart(overviewData.monthlyActivity);
+            console.log('✓ Monthly activity chart created');
+            
+            this.createUserRankingsChart(rankingsData.userRankings);
+            console.log('✓ User rankings chart created');
+            
+            this.createHourlyPatternsChart(rankingsData.hourlyPatterns);
+            console.log('✓ Hourly patterns chart created');
+            
+            this.createEnvironmentalImpactChart(rankingsData.impactByVehicle);
+            console.log('✓ Environmental impact chart created');
+            
+            // Create performance trend chart
+            if (overviewData.performanceTrend && overviewData.performanceTrend.length > 0) {
+                this.createPerformanceTrendChart(overviewData.performanceTrend);
+                console.log('✓ Performance trend chart created');
+            }
+            
+            // Create distance efficiency chart
+            this.createDistanceEfficiencyChart();
+            console.log('✓ Distance efficiency chart created');
+            
+            // Load user selection
+            await this.loadUserSelection();
+            
+            console.log('All charts initialized successfully!');
+            
+        } catch (error) {
+            console.error('Error initializing charts:', error);
+            this.showErrorToUser('Kan grafieken niet initialiseren: ' + error.message);
+        }
+    }
+
     // User Detail Charts
     async loadUserDetailCharts(userId) {
-        const userStats = await this.fetchUserStats(userId);
-        
-        // User Trend Line Chart
-        const trendCtx = document.getElementById('userTrendChart').getContext('2d');
-        const trendData = userStats.tripTrends;
-        
-        if (this.charts.userTrend) {
-            this.charts.userTrend.destroy();
-        }
-        
-        if (trendData.length > 0) {
-            const labels = trendData.map(item => 
-                `${item._id.month}/${item._id.year}`
-            );
+        try {
+            // Check DOM elements exist
+            const userTrendCanvas = document.getElementById('userTrendChart');
+            const userVehicleCanvas = document.getElementById('userVehicleChart');
             
-            this.charts.userTrend = new Chart(trendCtx, {
-                type: 'line',
+            if (!userTrendCanvas || !userVehicleCanvas) {
+                console.error('User detail chart canvases not found');
+                this.showErrorToUser('User detail grafieken niet beschikbaar');
+                return;
+            }
+            
+            const userStats = await this.fetchUserStats(userId);
+            
+            if (!userStats) {
+                console.error('No user stats received');
+                return;
+            }
+            
+            // User Trend Line Chart
+            const trendCtx = userTrendCanvas.getContext('2d');
+            const trendData = userStats.tripTrends || [];
+            
+            if (this.charts.userTrend) {
+                this.charts.userTrend.destroy();
+            }
+            
+            if (trendData.length > 0) {
+                const labels = trendData.map(item => {
+                    if (!item._id || !item._id.month || !item._id.year) return 'Onbekend';
+                    return `${item._id.month}/${item._id.year}`;
+                });
+                
+                this.charts.userTrend = new Chart(trendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Gemiddelde Efficiëntie',
+                            data: trendData.map(item => Math.round(item.avgEfficiency || 0)),
+                            borderColor: this.colors.secondary,
+                            backgroundColor: this.colors.secondary + '20',
+                            fill: true,
+                            tension: 0.4
+                        }, {
+                            label: 'Totaal Afstand (km)',
+                            data: trendData.map(item => Math.round(item.totalDistance || 0)),
+                            borderColor: this.colors.tertiary,
+                            backgroundColor: this.colors.tertiary + '20',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            } else {
+                // Show empty state
+                this.charts.userTrend = new Chart(trendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Geen data'],
+                        datasets: [{
+                            label: 'Geen data beschikbaar',
+                            data: [0],
+                            borderColor: this.colors.gray,
+                            backgroundColor: this.colors.gray + '20'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+            
+            // User Vehicle Bar Chart
+            const vehicleCtx = userVehicleCanvas.getContext('2d');
+            const vehicleData = userStats.vehicleStats || [];
+            
+            if (this.charts.userVehicle) {
+                this.charts.userVehicle.destroy();
+            }
+            
+            this.charts.userVehicle = new Chart(vehicleCtx, {
+                type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: vehicleData.map(item => item._id || 'Onbekend'),
                     datasets: [{
-                        label: 'Gemiddelde Efficiëntie',
-                        data: trendData.map(item => Math.round(item.avgEfficiency)),
-                        borderColor: this.colors.secondary,
-                        backgroundColor: this.colors.secondary + '20',
-                        fill: true,
-                        tension: 0.4
-                    }, {
-                        label: 'Totaal Afstand (km)',
-                        data: trendData.map(item => Math.round(item.totalDistance)),
-                        borderColor: this.colors.tertiary,
-                        backgroundColor: this.colors.tertiary + '20',
-                        fill: true,
-                        tension: 0.4
+                        label: 'Aantal Ritten',
+                        data: vehicleData.map(item => item.count || 0),
+                        backgroundColor: [
+                            this.colors.primary,
+                            this.colors.secondary,
+                            this.colors.tertiary,
+                            this.colors.quaternary,
+                            this.colors.quinary
+                        ]
                     }]
                 },
                 options: {
@@ -510,101 +607,43 @@ class AdminCharts {
                     maintainAspectRatio: false,
                     scales: {
                         y: {
-                            beginAtZero: true
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
                         }
                     }
                 }
             });
-        }
-        
-        // User Vehicle Bar Chart
-        const vehicleCtx = document.getElementById('userVehicleChart').getContext('2d');
-        const vehicleData = userStats.vehicleStats;
-        
-        if (this.charts.userVehicle) {
-            this.charts.userVehicle.destroy();
-        }
-        
-        this.charts.userVehicle = new Chart(vehicleCtx, {
-            type: 'bar',
-            data: {
-                labels: vehicleData.map(item => item._id),
-                datasets: [{
-                    label: 'Aantal Ritten',
-                    data: vehicleData.map(item => item.count),
-                    backgroundColor: [
-                        this.colors.primary,
-                        this.colors.secondary,
-                        this.colors.tertiary,
-                        this.colors.quaternary,
-                        this.colors.quinary
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1
-                        }
-                    }
-                }
-            }
-        });
-        
-        // Update distance efficiency chart for this user
-        await this.createDistanceEfficiencyChart(userId);
-    }
-
-    // Load users for selection dropdown
-    async loadUserSelection() {
-        const rankingsData = await this.fetchRankings();
-        const select = document.getElementById('userDetailSelect');
-        const userFilter = document.getElementById('userFilter');
-        
-        // Clear existing options except first one
-        while (select.options.length > 1) {
-            select.remove(1);
-        }
-        
-        rankingsData.userRankings.forEach(user => {
-            const option = document.createElement('option');
-            option.value = user._id;
-            option.textContent = user.username;
-            select.appendChild(option);
-        });
-        
-        // Also populate admin user filter
-        if (userFilter) {
-            userFilter.innerHTML = '';
-            userFilter.appendChild(new Option('Alle Gebruikers', 'all'));
             
-            rankingsData.userRankings.forEach(user => {
-                userFilter.appendChild(new Option(user.username, user._id));
-            });
+            // Update distance efficiency chart for this user
+            await this.updateDistanceEfficiencyChart(userId);
+            
+        } catch (error) {
+            console.error('Error loading user detail charts:', error);
+            this.showErrorToUser('Kan user detail grafieken niet laden: ' + error.message);
         }
-        
-        // Add event listener
-        select.addEventListener('change', async (e) => {
-            const userDetailCharts = document.getElementById('userDetailCharts');
-            if (e.target.value) {
-                userDetailCharts.style.display = 'block';
-                await this.loadUserDetailCharts(e.target.value);
-            } else {
-                userDetailCharts.style.display = 'none';
-            }
-        });
     }
 
-
+    // Method for debounced filter updates
+    applyFiltersWithDebounce(delay = 300) {
+        clearTimeout(window.debounceTimer);
+        window.debounceTimer = setTimeout(async () => {
+            await this.updateChartsWithFilters({});
+        }, delay);
+    }
 
     // Update all charts with filters
     async updateChartsWithFilters(filters = {}) {
         try {
             console.log('Updating charts with filters:', filters);
+            
+            // Clear any existing error messages
+            const existingError = document.querySelector('.chart-error');
+            if (existingError) existingError.remove();
+            
+            // Show loading state
+            this.showLoadingState();
             
             const overviewData = await this.fetchOverviewStats(filters);
             const rankingsData = await this.fetchRankings(filters);
@@ -612,12 +651,17 @@ class AdminCharts {
             console.log('Filtered overview data:', overviewData);
             console.log('Filtered rankings data:', rankingsData);
             
+            // Check if data is valid
+            if (!overviewData || !rankingsData) {
+                throw new Error('Geen data ontvangen van server');
+            }
+            
             // Update all charts with filtered data
-            this.updateVehicleUsageChart(overviewData.vehicleStats);
-            this.updateMonthlyActivityChart(overviewData.monthlyActivity);
-            this.updateUserRankingsChart(rankingsData.userRankings);
-            this.updateHourlyPatternsChart(rankingsData.hourlyPatterns);
-            this.updateEnvironmentalImpactChart(rankingsData.impactByVehicle);
+            this.updateVehicleUsageChart(overviewData.vehicleStats || []);
+            this.updateMonthlyActivityChart(overviewData.monthlyActivity || []);
+            this.updateUserRankingsChart(rankingsData.userRankings || []);
+            this.updateHourlyPatternsChart(rankingsData.hourlyPatterns || []);
+            this.updateEnvironmentalImpactChart(rankingsData.impactByVehicle || []);
             
             // Update performance trend chart
             if (overviewData.performanceTrend && overviewData.performanceTrend.length > 0) {
@@ -625,7 +669,7 @@ class AdminCharts {
             }
             
             // Update distance efficiency chart
-            if (filters.userId) {
+            if (filters.userId && filters.userId !== 'all') {
                 await this.updateDistanceEfficiencyChart(filters.userId);
             } else {
                 await this.updateDistanceEfficiencyChart();
@@ -635,29 +679,47 @@ class AdminCharts {
             
         } catch (error) {
             console.error('Error updating charts with filters:', error);
+            this.showErrorToUser('Fout bij het updaten van grafieken: ' + error.message);
+        } finally {
+            this.hideLoadingState();
         }
     }
 
     // Update methods for existing charts (update data without recreating)
     updateVehicleUsageChart(vehicleStats) {
-        if (!this.charts.vehicleUsage) return;
-        if (!vehicleStats || vehicleStats.length === 0) return;
+        if (!this.charts.vehicleUsage) {
+            console.warn('Vehicle usage chart not initialized');
+            return;
+        }
+        if (!vehicleStats || vehicleStats.length === 0) {
+            console.warn('No vehicle stats data available');
+            return;
+        }
         
-        const labels = vehicleStats.map(item => item._id);
-        const data = vehicleStats.map(item => item.count);
+        const labels = vehicleStats.map(item => item._id || 'Onbekend');
+        const data = vehicleStats.map(item => item.count || 0);
         
         this.charts.vehicleUsage.data.labels = labels;
         this.charts.vehicleUsage.data.datasets[0].data = data;
-        this.charts.vehicleUsage.update('none'); // Use 'none' for immediate update
+        this.charts.vehicleUsage.update('none');
     }
 
     updateMonthlyActivityChart(monthlyActivity) {
-        if (!this.charts.monthlyActivity) return;
-        if (!monthlyActivity || monthlyActivity.length === 0) return;
+        if (!this.charts.monthlyActivity) {
+            console.warn('Monthly activity chart not initialized');
+            return;
+        }
+        if (!monthlyActivity || monthlyActivity.length === 0) {
+            console.warn('No monthly activity data available');
+            return;
+        }
         
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const labels = monthlyActivity.map(item => `${monthNames[item._id.month - 1]} ${item._id.year}`);
-        const data = monthlyActivity.map(item => item.count);
+        const labels = monthlyActivity.map(item => {
+            if (!item._id || !item._id.month || !item._id.year) return 'Onbekend';
+            return `${monthNames[item._id.month - 1]} ${item._id.year}`;
+        });
+        const data = monthlyActivity.map(item => item.count || 0);
         
         this.charts.monthlyActivity.data.labels = labels;
         this.charts.monthlyActivity.data.datasets[0].data = data;
@@ -665,12 +727,18 @@ class AdminCharts {
     }
 
     updateUserRankingsChart(userRankings) {
-        if (!this.charts.userRankings) return;
-        if (!userRankings || userRankings.length === 0) return;
+        if (!this.charts.userRankings) {
+            console.warn('User rankings chart not initialized');
+            return;
+        }
+        if (!userRankings || userRankings.length === 0) {
+            console.warn('No user rankings data available');
+            return;
+        }
         
         const topUsers = userRankings.slice(0, 10);
-        const labels = topUsers.map(user => user.username);
-        const data = topUsers.map(user => Math.round(user.avgEfficiency));
+        const labels = topUsers.map(user => user.username || 'Onbekend');
+        const data = topUsers.map(user => Math.round(user.avgEfficiency || 0));
         
         this.charts.userRankings.data.labels = labels;
         this.charts.userRankings.data.datasets[0].data = data;
@@ -678,21 +746,20 @@ class AdminCharts {
     }
 
     updateHourlyPatternsChart(hourlyPatterns) {
-        if (!this.charts.hourlyPatterns) return;
-        if (!hourlyPatterns || hourlyPatterns.length === 0) {
-            // Show empty chart with all zeros
-            const hourlyData = new Array(24).fill(0);
-            const labels = Array.from({length: 24}, (_, i) => `${i}:00`);
-            this.charts.hourlyPatterns.data.labels = labels;
-            this.charts.hourlyPatterns.data.datasets[0].data = hourlyData;
-            this.charts.hourlyPatterns.update('none');
+        if (!this.charts.hourlyPatterns) {
+            console.warn('Hourly patterns chart not initialized');
             return;
         }
         
         const hourlyData = new Array(24).fill(0);
-        hourlyPatterns.forEach(item => {
-            hourlyData[item._id] = item.count;
-        });
+        
+        if (hourlyPatterns && hourlyPatterns.length > 0) {
+            hourlyPatterns.forEach(item => {
+                if (item._id >= 0 && item._id <= 23) {
+                    hourlyData[item._id] = item.count;
+                }
+            });
+        }
         
         const labels = Array.from({length: 24}, (_, i) => `${i}:00`);
         
@@ -702,12 +769,18 @@ class AdminCharts {
     }
 
     updateEnvironmentalImpactChart(impactByVehicle) {
-        if (!this.charts.environmentalImpact) return;
-        if (!impactByVehicle || impactByVehicle.length === 0) return;
+        if (!this.charts.environmentalImpact) {
+            console.warn('Environmental impact chart not initialized');
+            return;
+        }
+        if (!impactByVehicle || impactByVehicle.length === 0) {
+            console.warn('No environmental impact data available');
+            return;
+        }
         
-        const labels = impactByVehicle.map(item => item._id);
-        const avgEfficiency = impactByVehicle.map(item => Math.round(item.avgEfficiency));
-        const totalDistance = impactByVehicle.map(item => Math.round(item.totalDistance));
+        const labels = impactByVehicle.map(item => item._id || 'Onbekend');
+        const avgEfficiency = impactByVehicle.map(item => Math.round(item.avgEfficiency || 0));
+        const totalDistance = impactByVehicle.map(item => Math.round(item.totalDistance || 0));
         
         this.charts.environmentalImpact.data.labels = labels;
         this.charts.environmentalImpact.data.datasets[0].data = avgEfficiency;
@@ -716,10 +789,19 @@ class AdminCharts {
     }
 
     updatePerformanceTrendChart(performanceTrend) {
-        if (!this.charts.performanceTrend) return;
-        if (!performanceTrend || performanceTrend.length === 0) return;
+        if (!this.charts.performanceTrend) {
+            console.warn('Performance trend chart not initialized');
+            return;
+        }
+        if (!performanceTrend || performanceTrend.length === 0) {
+            console.warn('No performance trend data available');
+            return;
+        }
         
-        const labels = performanceTrend.map(item => `${item._id.month}/${item._id.year}`);
+        const labels = performanceTrend.map(item => {
+            if (!item._id || !item._id.month || !item._id.year) return 'Onbekend';
+            return `${item._id.month}/${item._id.year}`;
+        });
         const data = performanceTrend.map(item => Math.round(item.avgScore || 0));
         
         this.charts.performanceTrend.data.labels = labels;
@@ -747,32 +829,125 @@ class AdminCharts {
         }
         
         const scatterData = data.map(trip => ({
-            x: trip.distance,
-            y: trip.efficiencyScore,
-            label: userId ? trip.vehicle : `${trip.username} - ${trip.vehicle}`
+            x: trip.distance || 0,
+            y: trip.efficiencyScore || 0,
+            label: userId ? trip.vehicle : `${trip.username || 'Onbekend'} - ${trip.vehicle || 'Onbekend'}`
         }));
         
         this.charts.distanceEfficiency.data.datasets[0].data = scatterData;
         this.charts.distanceEfficiency.update('none');
     }
 
-    // Update all charts
-    async updateAllCharts() {
-        // Destroy existing charts
-        Object.values(this.charts).forEach(chart => {
-            if (chart && typeof chart.destroy === 'function') {
-                chart.destroy();
-            }
-        });
+    // Show error to user
+    showErrorToUser(message) {
+        const existing = document.querySelector('.chart-error');
+        if (existing) existing.remove();
         
-        // Reinitialize
-        await this.initializeCharts();
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'chart-error';
+        errorMsg.textContent = message;
+        errorMsg.style.cssText = `
+            background: #ff2e1f;
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            text-align: center;
+        `;
+        
+        const chartsContainer = document.querySelector('.charts-grid');
+        if (chartsContainer) {
+            chartsContainer.parentNode.insertBefore(errorMsg, chartsContainer);
+        }
+    }
+
+    // Show loading state
+    showLoadingState() {
+        const chartsGrid = document.querySelector('.charts-grid');
+        if (!chartsGrid) return;
+        
+        const loading = document.createElement('div');
+        loading.id = 'charts-loading';
+        loading.innerHTML = '⏳ Grafieken bijwerken...';
+        loading.style.cssText = `
+            text-align: center;
+            padding: 20px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: bold;
+        `;
+        
+        chartsGrid.parentNode.insertBefore(loading, chartsGrid);
+    }
+
+    // Hide loading state
+    hideLoadingState() {
+        const loading = document.getElementById('charts-loading');
+        if (loading) loading.remove();
+    }
+
+    // Load users for selection dropdown
+    async loadUserSelection() {
+        const rankingsData = await this.fetchRankings();
+        const select = document.getElementById('userDetailSelect');
+        const userFilter = document.getElementById('userFilter');
+        
+        // Clear existing options except first one
+        while (select && select.options.length > 1) {
+            select.remove(1);
+        }
+        
+        if (rankingsData && rankingsData.userRankings) {
+            rankingsData.userRankings.forEach(user => {
+                if (!user.username) return;
+                const option = document.createElement('option');
+                option.value = user._id;
+                option.textContent = user.username;
+                select.appendChild(option);
+            });
+        }
+        
+        // Also populate admin user filter
+        if (userFilter && rankingsData && rankingsData.userRankings) {
+            userFilter.innerHTML = '';
+            userFilter.appendChild(new Option('Alle Gebruikers', 'all'));
+            
+            rankingsData.userRankings.forEach(user => {
+                if (user.username) {
+                    userFilter.appendChild(new Option(user.username, user._id));
+                }
+            });
+        }
+        
+        // Add event listener
+        if (select) {
+            select.addEventListener('change', async (e) => {
+                const userDetailCharts = document.getElementById('userDetailCharts');
+                if (e.target.value && userDetailCharts) {
+                    userDetailCharts.style.display = 'block';
+                    await this.loadUserDetailCharts(e.target.value);
+                } else if (userDetailCharts) {
+                    userDetailCharts.style.display = 'none';
+                }
+            });
+        }
     }
 }
 
-// Create global instance and export
+// Export for use in app.js
 window.adminChartsInstance = null;
 window.AdminCharts = AdminCharts;
+
+// Make function available globally
+window.applyFiltersWithDebounce = async (delay = 300) => {
+    if (window.adminChartsInstance) {
+        clearTimeout(window.debounceTimer);
+        window.debounceTimer = setTimeout(async () => {
+            await window.adminChartsInstance.updateChartsWithFilters({});
+        }, delay);
+    }
+};
 
 // Auto-create instance when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {

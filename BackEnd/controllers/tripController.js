@@ -1,62 +1,58 @@
 const Trip = require('../models/Trip');
-const { calculateBehavioralProfile } = require('../controllers/analysisController');
 
-// @desc    Haal ritten van huidige gebruiker op
-// @route   GET /api/trips (protected)
-exports.getTrips = async (req, res) => {
+// @desc    Add a new trip
+// @route   POST /api/trips (protected)
+exports.createTrip = async (req, res) => {
     try {
-        // Haal alleen trips van huidige ingelogde gebruiker
-        const trips = await Trip.find({ userId: req.user.id })
-            .populate('userId', 'username')
-            .sort({ createdAt: -1 }); // Nieuwste eerst
+        const { location_a, location_b, vehicle, duration } = req.body;
+
+        if (!location_a || !location_b || !vehicle || !duration) {
+            return res.status(400).json({ message: "Alle velden zijn verplicht" });
+        }
+
+        // Convert duration to number if it's a string
+        const durationNum = parseInt(duration);
         
-        // Voeg scores toe voor weergave
-        const analyzedTrips = trips.map(trip => calculateScore(trip));
+        if (isNaN(durationNum) || durationNum <= 0) {
+            return res.status(400).json({ message: "Duur moet een positief getal zijn" });
+        }
+
+        // Calculate distance using Haversine formula
+        const distance = calculateDistance(location_a, location_b);
+
+        // Create new trip
+        const newTrip = await Trip.create({
+            userId: req.user.id,
+            location_a,
+            location_b,
+            vehicle,
+            duration: durationNum,
+            distance,
+            createdAt: new Date()
+        });
+
+        const analyzedTrip = calculateScore(newTrip);
         
-        res.status(200).json(analyzedTrips);
+        res.status(201).json(analyzedTrip);
+        
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
 
-// @desc    Maak een nieuwe rit aan voor huidige gebruiker
-// @route   POST /api/trips (protected)
-exports.createTrip = async (req, res) => {
+// @desc    Get trips for current user
+// @route   GET /api/trips (protected)
+exports.getTrips = async (req, res) => {
     try {
-        const { vehicle, distance, duration, location_a, location_b } = req.body;
-
-        // Rit aanmaken met ID van ingelogde gebruiker
-        const newTrip = await Trip.create({
-            userId: req.user.id,
-            location_a: location_a || "Start",
-            location_b: location_b || "Eind",
-            vehicle,
-            distance,
-            duration
-        });
-
-        // Haal de nieuwe rit op met user info voor weergave
-        const populatedTrip = await Trip.findById(newTrip._id)
+        const trips = await Trip.find({ userId: req.user.id })
+            .sort({ createdAt: -1 })
             .populate('userId', 'username');
         
-        const analyzedTrip = calculateScore(populatedTrip);
-
-        try {
-            // Perform behavioral analysis on user
-            const behavioralAnalysis = await calculateBehavioralProfile(req.user.id);
-            
-            // Include analysis in trip response for frontend display
-            analyzedTrip.behavioralAnalysis = behavioralAnalysis;
-            
-        } catch (analysisError) {
-            console.error('[BEHAVIORAL ANALYSIS ERROR]:', analysisError.message);
-            // Still return trip even if analysis fails
-        }
-
-        res.status(201).json(analyzedTrip);
-
+        const analyzedTrips = trips.map(trip => calculateScore(trip));
+        
+        res.status(200).json(analyzedTrips);
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(500).json({ message: error.message });
     }
 };
 
@@ -96,6 +92,23 @@ exports.getAllTrips = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// Haversine formula to calculate distance between two GPS coordinates in km
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Radius of the Earth in kilometers
+    const dLat = toRadians(lat2 - lat1);
+    const dLon = toRadians(lon2 - lon1);
+    const a = 
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
+function toRadians(degrees) {
+    return degrees * (Math.PI / 180);
+}
 
 // Hulpfunctie: Het WMD Algoritme (op één plek zodat we het niet dubbel schrijven)
 function calculateScore(trip) {
@@ -192,3 +205,6 @@ function calculateScore(trip) {
     
     return tripObj;
 }
+
+// Export the calculateScore function for use in other controllers
+exports.calculateScore = calculateScore;

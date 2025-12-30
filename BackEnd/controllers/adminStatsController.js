@@ -1,6 +1,9 @@
 const Trip = require('../models/Trip');
 const User = require('../models/User');
 
+// Import the calculateScore function from tripController
+const { calculateScore } = require('./tripController');
+
 // Get overall statistics for admin dashboard
 const getOverviewStats = async (req, res) => {
   try {
@@ -38,77 +41,90 @@ const getOverviewStats = async (req, res) => {
       $lte: toDate
     };
     
-    // Performance filter
-    const performanceScoreFilter = {};
+    const totalUsers = await User.countDocuments();
+    
+    // Get trips with filters
+    const trips = await Trip.find(matchStage)
+      .populate('userId', 'username')
+      .sort({ createdAt: -1 });
+    
+    // Calculate scores for all trips
+    const analyzedTrips = trips.map(trip => calculateScore(trip));
+    
+    // Apply performance filter after scoring
+    let filteredTrips = analyzedTrips;
     if (performance === 'criminal') {
-      matchStage.efficiencyScore = { $lt: 25 };
+      filteredTrips = analyzedTrips.filter(trip => trip.efficiencyScore < 25);
     } else if (performance === 'neutral') {
-      matchStage.efficiencyScore = { $gte: 25, $lte: 74 };
+      filteredTrips = analyzedTrips.filter(trip => trip.efficiencyScore >= 25 && trip.efficiencyScore <= 74);
     } else if (performance === 'warrior') {
-      matchStage.efficiencyScore = { $gte: 75 };
+      filteredTrips = analyzedTrips.filter(trip => trip.efficiencyScore >= 75);
     }
     
-    const totalUsers = await User.countDocuments();
-    const totalTrips = await Trip.countDocuments(matchStage);
+    const totalTrips = filteredTrips.length;
     
-    // Average efficiency score
-    const avgEfficiency = await Trip.aggregate([
-      { $match: matchStage },
-      { $group: { _id: null, avgScore: { $avg: '$efficiencyScore' } } }
-    ]);
-
+    // Calculate average efficiency score
+    const avgEfficiency = filteredTrips.length > 0 
+      ? filteredTrips.reduce((sum, trip) => sum + trip.efficiencyScore, 0) / filteredTrips.length 
+      : 0;
+    
     // Vehicle usage distribution
-    const vehicleStats = await Trip.aggregate([
-      { $match: matchStage },
-      { $group: { _id: '$vehicle', count: { $sum: 1 } } },
-      { $sort: { count: -1 } }
-    ]);
-
+    const vehicleStats = {};
+    filteredTrips.forEach(trip => {
+      vehicleStats[trip.vehicle] = (vehicleStats[trip.vehicle] || 0) + 1;
+    });
+    const vehicleStatsArray = Object.entries(vehicleStats)
+      .map(([vehicle, count]) => ({ _id: vehicle, count }))
+      .sort((a, b) => b.count - a.count);
+    
     // User performance distribution
-    const performanceStats = await Trip.aggregate([
-      { $match: matchStage },
-      { $group: { _id: '$status', count: { $sum: 1 } } }
-    ]);
-
-    // Monthly activity (last 12 months with filters)
-    const monthlyActivity = await Trip.aggregate([
-      { $match: matchStage },
-      {
-        $group: {
-          _id: {
-            year: { $year: '$createdAt' },
-            month: { $month: '$createdAt' }
-          },
-          count: { $sum: 1 },
-          avgEfficiency: { $avg: '$efficiencyScore' }
-        }
-      },
-      { $sort: { '_id.year': 1, '_id.month': 1 } }
-    ]);
-
-    // Performance trend (efficiency over time with filters)
-    const performanceTrend = await Trip.aggregate([
-      { $match: matchStage },
-      {
-        $group: {
-          _id: {
-            year: { $year: '$createdAt' },
-            month: { $month: '$createdAt' }
-          },
-          avgScore: { $avg: '$efficiencyScore' },
-          tripCount: { $sum: 1 }
-        }
-      },
-      { $sort: { '_id.year': 1, '_id.month': 1 } }
-    ]);
-
+    const performanceStats = {};
+    filteredTrips.forEach(trip => {
+      performanceStats[trip.status] = (performanceStats[trip.status] || 0) + 1;
+    });
+    const performanceStatsArray = Object.entries(performanceStats)
+      .map(([status, count]) => ({ _id: status, count }))
+      .sort((a, b) => b.count - a.count);
+    
+    // Monthly activity
+    const monthlyActivity = {};
+    filteredTrips.forEach(trip => {
+      const date = new Date(trip.createdAt);
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+      const key = `${year}-${month}`;
+      
+      if (!monthlyActivity[key]) {
+        monthlyActivity[key] = { _id: { year, month }, count: 0, totalEfficiency: 0 };
+      }
+      monthlyActivity[key].count++;
+      monthlyActivity[key].totalEfficiency += trip.efficiencyScore;
+    });
+    
+    Object.values(monthlyActivity).forEach(month => {
+      month.avgEfficiency = month.count > 0 ? month.totalEfficiency / month.count : 0;
+    });
+    
+    const monthlyActivityArray = Object.values(monthlyActivity)
+      .sort((a, b) => {
+        if (a._id.year !== b._id.year) return a._id.year - b._id.year;
+        return a._id.month - b._id.month;
+      });
+    
+    // Performance trend (same as monthly but specifically for trend)
+    const performanceTrend = monthlyActivityArray.map(month => ({
+      _id: { year: month._id.year, month: month._id.month },
+      avgScore: Math.round(month.avgEfficiency),
+      tripCount: month.count
+    }));
+    
     res.json({
       totalUsers,
       totalTrips,
-      avgEfficiency: avgEfficiency[0]?.avgScore || 0,
-      vehicleStats,
-      performanceStats,
-      monthlyActivity,
+      avgEfficiency: Math.round(avgEfficiency),
+      vehicleStats: vehicleStatsArray,
+      performanceStats: performanceStatsArray,
+      monthlyActivity: monthlyActivityArray,
       performanceTrend
     });
   } catch (error) {
@@ -121,46 +137,75 @@ const getUserStats = async (req, res) => {
   try {
     const { userId } = req.params;
     
+    // Get user trips
+    const userTrips = await Trip.find({ userId })
+      .sort({ createdAt: -1 });
+    
+    // Calculate scores for all trips
+    const analyzedTrips = userTrips.map(trip => calculateScore(trip));
+    
     // User trip trends over time
-    const tripTrends = await Trip.aggregate([
-      { $match: { userId: userId } },
-      {
-        $group: {
-          _id: {
-            year: { $year: '$createdAt' },
-            month: { $month: '$createdAt' }
-          },
-          avgEfficiency: { $avg: '$efficiencyScore' },
-          totalDistance: { $sum: '$distance' },
-          tripCount: { $sum: 1 }
-        }
-      },
-      { $sort: { '_id.year': 1, '_id.month': 1 } }
-    ]);
-
+    const tripTrends = {};
+    analyzedTrips.forEach(trip => {
+      const date = new Date(trip.createdAt);
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+      const key = `${year}-${month}`;
+      
+      if (!tripTrends[key]) {
+        tripTrends[key] = { 
+          _id: { year, month }, 
+          avgEfficiency: 0, 
+          totalDistance: 0, 
+          tripCount: 0 
+        };
+      }
+      tripTrends[key].tripCount++;
+      tripTrends[key].totalDistance += trip.distance;
+      tripTrends[key].avgEfficiency += trip.efficiencyScore;
+    });
+    
+    Object.values(tripTrends).forEach(month => {
+      month.avgEfficiency = month.tripCount > 0 ? month.avgEfficiency / month.tripCount : 0;
+    });
+    
+    const tripTrendsArray = Object.values(tripTrends)
+      .sort((a, b) => {
+        if (a._id.year !== b._id.year) return a._id.year - b._id.year;
+        return a._id.month - b._id.month;
+      });
+    
     // Vehicle usage for this user
-    const userVehicleStats = await Trip.aggregate([
-      { $match: { userId: userId } },
-      { $group: { _id: '$vehicle', count: { $sum: 1 } } },
-      { $sort: { count: -1 } }
-    ]);
-
+    const userVehicleStats = {};
+    analyzedTrips.forEach(trip => {
+      userVehicleStats[trip.vehicle] = (userVehicleStats[trip.vehicle] || 0) + 1;
+    });
+    const vehicleStatsArray = Object.entries(userVehicleStats)
+      .map(([vehicle, count]) => ({ _id: vehicle, count }))
+      .sort((a, b) => b.count - a.count);
+    
     // Distance vs Efficiency scatter data
-    const distanceEfficiency = await Trip.find({ userId })
-      .select('distance efficiencyScore vehicle createdAt')
-      .sort({ createdAt: 1 });
-
+    const distanceEfficiency = analyzedTrips.map(trip => ({
+      distance: trip.distance,
+      efficiencyScore: trip.efficiencyScore,
+      vehicle: trip.vehicle,
+      createdAt: trip.createdAt
+    }));
+    
     // Performance distribution
-    const userPerformanceStats = await Trip.aggregate([
-      { $match: { userId: userId } },
-      { $group: { _id: '$status', count: { $sum: 1 } } }
-    ]);
+    const userPerformanceStats = {};
+    analyzedTrips.forEach(trip => {
+      userPerformanceStats[trip.status] = (userPerformanceStats[trip.status] || 0) + 1;
+    });
+    const performanceStatsArray = Object.entries(userPerformanceStats)
+      .map(([status, count]) => ({ _id: status, count }))
+      .sort((a, b) => b.count - a.count);
 
     res.json({
-      tripTrends,
-      vehicleStats: userVehicleStats,
+      tripTrends: tripTrendsArray,
+      vehicleStats: vehicleStatsArray,
       distanceEfficiency,
-      performanceStats: userPerformanceStats
+      performanceStats: performanceStatsArray
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -204,76 +249,88 @@ const getRankings = async (req, res) => {
       $lte: toDate
     };
     
-    // Performance filter
+    // Get trips with filters
+    const trips = await Trip.find(matchStage)
+      .populate('userId', 'username')
+      .sort({ createdAt: -1 });
+    
+    // Calculate scores for all trips
+    const analyzedTrips = trips.map(trip => calculateScore(trip));
+    
+    // Apply performance filter after scoring
+    let filteredTrips = analyzedTrips;
     if (performance === 'criminal') {
-      matchStage.efficiencyScore = { $lt: 25 };
+      filteredTrips = analyzedTrips.filter(trip => trip.efficiencyScore < 25);
     } else if (performance === 'neutral') {
-      matchStage.efficiencyScore = { $gte: 25, $lte: 74 };
+      filteredTrips = analyzedTrips.filter(trip => trip.efficiencyScore >= 25 && trip.efficiencyScore <= 74);
     } else if (performance === 'warrior') {
-      matchStage.efficiencyScore = { $gte: 75 };
+      filteredTrips = analyzedTrips.filter(trip => trip.efficiencyScore >= 75);
     }
     
     // User rankings by average efficiency
-    const userRankings = await Trip.aggregate([
-      { $match: matchStage },
-      {
-        $group: {
-          _id: '$userId',
-          avgEfficiency: { $avg: '$efficiencyScore' },
-          totalTrips: { $sum: 1 },
-          totalDistance: { $sum: '$distance' }
-        }
-      },
-      { $sort: { avgEfficiency: -1 } },
-      {
-        $lookup: {
-          from: 'users',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'userInfo'
-        }
-      },
-      { $unwind: '$userInfo' },
-      {
-        $project: {
-          username: '$userInfo.username',
-          avgEfficiency: 1,
-          totalTrips: 1,
-          totalDistance: 1
-        }
+    const userRankingsMap = {};
+    filteredTrips.forEach(trip => {
+      const username = trip.userId ? trip.userId.username : 'Onbekend';
+      if (!userRankingsMap[username]) {
+        userRankingsMap[username] = { 
+          username, 
+          totalEfficiency: 0, 
+          totalTrips: 0, 
+          totalDistance: 0,
+          _id: trip.userId 
+        };
       }
-    ]);
+      userRankingsMap[username].totalEfficiency += trip.efficiencyScore;
+      userRankingsMap[username].totalTrips++;
+      userRankingsMap[username].totalDistance += trip.distance;
+    });
+    
+    Object.values(userRankingsMap).forEach(user => {
+      user.avgEfficiency = user.totalEfficiency / user.totalTrips;
+    });
+    
+    const userRankings = Object.values(userRankingsMap)
+      .sort((a, b) => b.avgEfficiency - a.avgEfficiency);
 
     // Time pattern analysis (trips by hour of day)
-    const hourlyPatterns = await Trip.aggregate([
-      { $match: matchStage },
-      {
-        $group: {
-          _id: { $hour: '$createdAt' },
-          count: { $sum: 1 }
-        }
-      },
-      { $sort: { '_id': 1 } }
-    ]);
+    const hourlyPatterns = {};
+    filteredTrips.forEach(trip => {
+      const hour = new Date(trip.createdAt).getHours();
+      hourlyPatterns[hour] = (hourlyPatterns[hour] || 0) + 1;
+    });
+    
+    const hourlyPatternsArray = Array.from({ length: 24 }, (_, hour) => ({
+      _id: hour,
+      count: hourlyPatterns[hour] || 0
+    })).sort((a, b) => a._id - b._id);
 
     // Environmental impact totals
-    const impactByVehicle = await Trip.aggregate([
-      { $match: matchStage },
-      {
-        $group: {
-          _id: '$vehicle',
-          totalTrips: { $sum: 1 },
-          totalDistance: { $sum: '$distance' },
-          avgEfficiency: { $avg: '$efficiencyScore' },
-          totalImpact: { $sum: '$efficiencyScore' }
-        }
-      },
-      { $sort: { totalImpact: -1 } }
-    ]);
+    const impactByVehicleMap = {};
+    filteredTrips.forEach(trip => {
+      if (!impactByVehicleMap[trip.vehicle]) {
+        impactByVehicleMap[trip.vehicle] = {
+          _id: trip.vehicle,
+          totalTrips: 0,
+          totalDistance: 0,
+          totalEfficiency: 0
+        };
+      }
+      impactByVehicleMap[trip.vehicle].totalTrips++;
+      impactByVehicleMap[trip.vehicle].totalDistance += trip.distance;
+      impactByVehicleMap[trip.vehicle].totalEfficiency += trip.efficiencyScore;
+    });
+    
+    Object.values(impactByVehicleMap).forEach(vehicle => {
+      vehicle.avgEfficiency = vehicle.totalEfficiency / vehicle.totalTrips;
+      vehicle.totalImpact = vehicle.totalEfficiency;
+    });
+    
+    const impactByVehicle = Object.values(impactByVehicleMap)
+      .sort((a, b) => b.totalImpact - a.totalImpact);
 
     res.json({
       userRankings,
-      hourlyPatterns,
+      hourlyPatterns: hourlyPatternsArray,
       impactByVehicle
     });
   } catch (error) {
