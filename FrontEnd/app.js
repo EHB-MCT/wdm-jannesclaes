@@ -1,4 +1,5 @@
 const BACKEND_URL = "http://localhost:5050";
+window.BACKEND_URL = BACKEND_URL; // Make available to other scripts
 
 // DOM Elements
 const authSection = document.getElementById("auth-section");
@@ -31,6 +32,7 @@ const submitBtn = document.getElementById("submitBtn");
 let transport = "";
 let currentUser = null;
 let allTrips = []; // Store all trips for filtering
+let adminCharts = null; // Admin charts instance
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
@@ -342,6 +344,16 @@ function showAdminSection() {
     tripSection.style.display = 'none';
     adminSection.style.display = 'block';
     loadAllTrips();
+    
+    // Initialize admin charts if not already done
+    if (!adminCharts) {
+        adminCharts = window.adminChartsInstance || new AdminCharts();
+        if (adminCharts) {
+            setTimeout(() => {
+                adminCharts.initializeCharts();
+            }, 200);
+        }
+    }
 }
 
 async function loadAllTrips() {

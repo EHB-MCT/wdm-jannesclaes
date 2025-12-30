@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Movement Dashboard</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div id="wrapper">
@@ -126,6 +127,49 @@
                     <button id="clearFilters">Filters Wissen</button>
                 </div>
                 
+                <div id="admin-charts-container">
+                    <div class="charts-grid">
+                        <div class="chart-box">
+                            <h4>Gebruikers Prestaties Trend</h4>
+                            <canvas id="performanceTrendChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <h4>Voertuiggebruik</h4>
+                            <canvas id="vehicleUsageChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <h4>Gebruikers Ranglijst</h4>
+                            <canvas id="userRankingsChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <h4>Maandelijkse Activiteit</h4>
+                            <canvas id="monthlyActivityChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <h4>Afstand vs Efficiëntie</h4>
+                            <canvas id="distanceEfficiencyChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <h4>Dagelijkse Tijdspatronen</h4>
+                            <canvas id="hourlyPatternsChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <h4>Milieu Impact per Voertuig</h4>
+                            <canvas id="environmentalImpactChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <h4>Gebruiker Detail</h4>
+                            <select id="userDetailSelect">
+                                <option value="">Kies gebruiker...</option>
+                            </select>
+                            <div id="userDetailCharts" style="display: none;">
+                                <canvas id="userTrendChart"></canvas>
+                                <canvas id="userVehicleChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div id="user-performance-summary">
                     <h3>Gebruikers Prestatie Overzicht</h3>
                     <div id="all-users-performance"></div>
@@ -138,6 +182,8 @@
     </div>
 </body>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="charts.js"></script>
 <script src="tracker.js"></script>
 <script src="app.js"></script>
 </html>
