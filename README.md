@@ -40,7 +40,16 @@ A web application for tracking and scoring daily transportation choices based on
    docker-compose up -d
    ```
 
-3. **Access the application**:
+3. **Create admin account (first time only)**:
+   ```bash
+   npm run docker-seed
+   ```
+   
+   Admin credentials:
+   - Username: `admin`
+   - Password: `admin1234`
+
+4. **Access the application**:
    - Frontend: http://localhost:1234
    - Backend API: http://localhost:5050
    - Database: MongoDB on port 27017
