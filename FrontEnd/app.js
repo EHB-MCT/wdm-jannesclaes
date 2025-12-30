@@ -414,7 +414,7 @@ async function loadAllTrips() {
             displayTrips(allTrips);
             
             // Calculate and display user performance
-            // displayUserPerformance(allTrips); // Temporarily disabled for debugging
+
         } else {
             const list = document.getElementById('admin-trip-list');
             if (list) {
@@ -648,10 +648,7 @@ function displayTrips(trips) {
     `;
 }
 
-function displayUserPerformance(trips) {
-    // Temporarily disabled for debugging
-    console.log('displayUserPerformance temporarily disabled');
-}
+
 
 function clearAllFilters() {
     document.getElementById('performanceFilter').value = 'all';

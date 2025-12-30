@@ -61,14 +61,7 @@ body {
     height: 250px !important;
 }
 
-#userDetailSelect {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background: white;
-}
+
 
 .date-filters {
     display: flex;
@@ -97,10 +90,7 @@ body {
     margin-top: 15px;
 }
 
-#userDetailCharts canvas {
-    width: 100% !important;
-    height: 200px !important;
-}
+
 
 /* Authentication Section */
 #auth-section {
@@ -600,56 +590,3 @@ body {
     background-color: #5a6268;
 }
 
-/* User Performance Summary */
-#user-performance-summary {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    border-left: 4px solid var(--red);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-}
-
-#user-performance-summary h3 {
-    color: var(--red);
-    margin-bottom: 15px;
-}
-
-#low-performing-users {
-    display: grid;
-    gap: 15px;
-}
-
-.user-performance-card {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 6px;
-    border: 1px solid #e0e0e0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.user-performance-card .user-info {
-    flex: 1;
-}
-
-.user-performance-card .username {
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 5px;
-}
-
-.user-performance-card .stats {
-    font-size: 12px;
-    color: #666;
-}
-
-.user-performance-card .performance-badge {
-    background: #ff2e1f;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 15px;
-    font-size: 12px;
-    font-weight: bold;
-}

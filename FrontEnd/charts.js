@@ -500,137 +500,7 @@ class AdminCharts {
         }
     }
 
-    // User Detail Charts
-    async loadUserDetailCharts(userId) {
-        try {
-            // Check DOM elements exist
-            const userTrendCanvas = document.getElementById('userTrendChart');
-            const userVehicleCanvas = document.getElementById('userVehicleChart');
-            
-            if (!userTrendCanvas || !userVehicleCanvas) {
-                console.error('User detail chart canvases not found');
-                this.showErrorToUser('User detail grafieken niet beschikbaar');
-                return;
-            }
-            
-            const userStats = await this.fetchUserStats(userId);
-            
-            if (!userStats || userStats.message) {
-                console.error('No user stats received:', userStats);
-                this.showErrorToUser('Geen gebruikersdata beschikbaar');
-                return;
-            }
-            
-            // User Trend Line Chart
-            const trendCtx = userTrendCanvas.getContext('2d');
-            const trendData = Array.isArray(userStats.tripTrends) ? userStats.tripTrends : [];
-            
-            if (this.charts.userTrend) {
-                this.charts.userTrend.destroy();
-            }
-            
-            if (trendData.length > 0) {
-                const labels = trendData.map(item => {
-                    if (!item._id || !item._id.month || !item._id.year) return 'Onbekend';
-                    return `${item._id.month}/${item._id.year}`;
-                });
-                
-                this.charts.userTrend = new Chart(trendCtx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Gemiddelde Efficiëntie',
-                            data: trendData.map(item => Math.round(item.avgEfficiency || 0)),
-                            borderColor: this.colors.secondary,
-                            backgroundColor: this.colors.secondary + '20',
-                            fill: true,
-                            tension: 0.4
-                        }, {
-                            label: 'Totaal Afstand (km)',
-                            data: trendData.map(item => Math.round(item.totalDistance || 0)),
-                            borderColor: this.colors.tertiary,
-                            backgroundColor: this.colors.tertiary + '20',
-                            fill: true,
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        }
-                    }
-                });
-            } else {
-                // Show empty state
-                this.charts.userTrend = new Chart(trendCtx, {
-                    type: 'line',
-                    data: {
-                        labels: ['Geen data'],
-                        datasets: [{
-                            label: 'Geen data beschikbaar',
-                            data: [0],
-                            borderColor: this.colors.gray,
-                            backgroundColor: this.colors.gray + '20'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false
-                    }
-                });
-            }
-            
-            // User Vehicle Bar Chart
-            const vehicleCtx = userVehicleCanvas.getContext('2d');
-            const vehicleData = Array.isArray(userStats.vehicleStats) ? userStats.vehicleStats : [];
-            
-            if (this.charts.userVehicle) {
-                this.charts.userVehicle.destroy();
-            }
-            
-            this.charts.userVehicle = new Chart(vehicleCtx, {
-                type: 'bar',
-                data: {
-                    labels: vehicleData.map(item => item._id || 'Onbekend'),
-                    datasets: [{
-                        label: 'Aantal Ritten',
-                        data: vehicleData.map(item => item.count || 0),
-                        backgroundColor: [
-                            this.colors.primary,
-                            this.colors.secondary,
-                            this.colors.tertiary,
-                            this.colors.quaternary,
-                            this.colors.quinary
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 1
-                            }
-                        }
-                    }
-                }
-            });
-            
-            // Update distance efficiency chart for this user
-            await this.updateDistanceEfficiencyChart(userId);
-            
-        } catch (error) {
-            console.error('Error loading user detail charts:', error);
-            this.showErrorToUser('Kan user detail grafieken niet laden: ' + error.message);
-        }
-    }
+
 
     // Method for debounced filter updates
     applyFiltersWithDebounce(delay = 300) {
@@ -915,29 +785,12 @@ class AdminCharts {
         if (loading) loading.remove();
     }
 
-    // Load users for selection dropdown
+    // Load users for admin filter dropdown
     async loadUserSelection() {
         const rankingsData = await this.fetchRankings();
-        const select = document.getElementById('userDetailSelect');
         const userFilter = document.getElementById('userFilter');
         
-        // Clear existing options except first one
-        while (select && select.options.length > 1) {
-            select.remove(1);
-        }
-        
-        if (rankingsData && rankingsData.userRankings) {
-            rankingsData.userRankings.forEach(user => {
-                if (!user.username) return;
-                const option = document.createElement('option');
-                // Ensure _id is properly converted to string
-                option.value = user._id ? String(user._id) : 'unknown';
-                option.textContent = user.username;
-                select.appendChild(option);
-            });
-        }
-        
-        // Also populate admin user filter
+        // Populate admin user filter
         if (userFilter && rankingsData && rankingsData.userRankings) {
             userFilter.innerHTML = '';
             userFilter.appendChild(new Option('Alle Gebruikers', 'all'));
@@ -948,19 +801,6 @@ class AdminCharts {
                     const userIdStr = user._id ? String(user._id) : 'unknown';
                     const option = new Option(user.username, userIdStr);
                     userFilter.appendChild(option);
-                }
-            });
-        }
-        
-        // Add event listener
-        if (select) {
-            select.addEventListener('change', async (e) => {
-                const userDetailCharts = document.getElementById('userDetailCharts');
-                if (e.target.value && userDetailCharts) {
-                    userDetailCharts.style.display = 'block';
-                    await this.loadUserDetailCharts(e.target.value);
-                } else if (userDetailCharts) {
-                    userDetailCharts.style.display = 'none';
                 }
             });
         }
