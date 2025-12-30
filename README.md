@@ -71,6 +71,8 @@ A web application for tracking and scoring daily transportation choices based on
 
 For development setup and coding standards, see `STANDARDS.md`.
 
+For resources, tools, and documentation, see `RESOURCES.md`.
+
 ## Contributing
 
 For contribution guidelines, see `CONTRIBUTING.MD`.
