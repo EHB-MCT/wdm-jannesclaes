@@ -35,9 +35,11 @@ A web application for tracking and scoring daily transportation choices based on
    cd wdm-jannesclaes
    ```
 
-2. **Start with Docker**:
+2. **Setup environment**:
    ```bash
-   docker-compose up -d
+   cd BackEnd
+   cp .env.example .env
+   cd ..
    ```
 
 3. **Create admin account (first time only)**:
