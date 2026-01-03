@@ -519,6 +519,11 @@ async function createTrip(trip) {
                 alertMessage += `\n\n⚠️  Dit is een "Weapon of Math Destruction" - bias algoritme voor educatieve doeleinden`;
             }
             
+            // Update behavioral charts immediately after trip creation with new data
+            if (result.behavioralAnalysis && window.adminChartsInstance) {
+                window.adminChartsInstance.updateBehavioralChartsWithDebounce();
+            }
+
             alert(alertMessage);
             
             // Reset form

@@ -299,4 +299,47 @@ router.get('/average', authenticate, async (req, res) => {
     }
 });
 
+/**
+ * GET /api/analyze/users
+ * 
+ * Get users with behavioral analysis data for charts
+ * Returns individual user cognitive load scores for distribution charts
+ */
+router.get('/users', authenticate, async (req, res) => {
+    try {
+        // Check if requester is admin
+        const requestingUser = await User.findById(req.user.id);
+        if (!requestingUser.isAdmin) {
+            return res.status(403).json({ 
+                message: "Admin privileges required for user behavioral data",
+                ethicalNote: "Individual behavioral data should be protected"
+            });
+        }
+
+        // Get users with behavioral analysis data
+        const users = await User.find({
+            'analysis.cognitiveLoad': { $exists: true }
+        }).select('username analysis.cognitiveLoad').lean();
+
+        res.json({
+            success: true,
+            users: users.map(user => ({
+                username: user.username,
+                cognitiveLoad: user.analysis.cognitiveLoad
+            })),
+            dataProtection: {
+                warning: "This data represents behavioral profiling and should be handled ethically",
+                consent: "Users may not have explicitly consented to this level of analysis"
+            }
+        });
+
+    } catch (error) {
+        console.error('[USERS DATA ROUTE ERROR]:', error);
+        res.status(500).json({ 
+            message: "Failed to retrieve user behavioral data",
+            error: error.message
+        });
+    }
+});
+
 module.exports = router;
