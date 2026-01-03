@@ -11,7 +11,6 @@ const getOverviewStats = async (req, res) => {
     const {
       performance,
       vehicle,
-      userId,
       dateFrom,
       dateTo
     } = req.query;
@@ -22,11 +21,6 @@ const getOverviewStats = async (req, res) => {
     // Vehicle filter
     if (vehicle && vehicle !== 'all') {
       matchStage.vehicle = vehicle;
-    }
-    
-    // User filter
-    if (userId && userId !== 'all') {
-      matchStage.userId = userId;
     }
     
     // Date range filter (1 year default)
@@ -219,7 +213,6 @@ const getRankings = async (req, res) => {
     const {
       performance,
       vehicle,
-      userId,
       dateFrom,
       dateTo
     } = req.query;
@@ -230,11 +223,6 @@ const getRankings = async (req, res) => {
     // Vehicle filter
     if (vehicle && vehicle !== 'all') {
       matchStage.vehicle = vehicle;
-    }
-    
-    // User filter
-    if (userId && userId !== 'all') {
-      matchStage.userId = userId;
     }
     
     // Date range filter (1 year default)

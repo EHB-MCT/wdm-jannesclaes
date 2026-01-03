@@ -1125,26 +1125,7 @@ class AdminCharts {
         if (loading) loading.remove();
     }
 
-    // Load users for admin filter dropdown
-    async loadUserSelection() {
-        const rankingsData = await this.fetchRankings();
-        const userFilter = document.getElementById('userFilter');
-        
-        // Populate admin user filter
-        if (userFilter && rankingsData && rankingsData.userRankings) {
-            userFilter.innerHTML = '';
-            userFilter.appendChild(new Option('Alle Gebruikers', 'all'));
-            
-            rankingsData.userRankings.forEach(user => {
-                if (user.username) {
-                    // Simplified ObjectId conversion - should work now that backend is fixed
-                    const userIdStr = user._id ? String(user._id) : 'unknown';
-                    const option = new Option(user.username, userIdStr);
-                    userFilter.appendChild(option);
-                }
-            });
-        }
-    }
+
 }
 
 // Export for use in app.js
@@ -1159,35 +1140,12 @@ window.applyFiltersWithDebounce = async (delay = 300) => {
             // Collect filter values with explicit string conversion
             const performance = document.getElementById('performanceFilter')?.value || 'all';
             const vehicle = document.getElementById('vehicleFilter')?.value || 'all';
-            const userFilterElement = document.getElementById('userFilter');
             const dateFrom = document.getElementById('dateFromFilter')?.value || '';
             const dateTo = document.getElementById('dateToFilter')?.value || '';
-            
-            // Get userId and ensure it's a string
-            let userId = 'all';
-            if (userFilterElement) {
-                const rawValue = userFilterElement.value;
-                
-                // Force string conversion and handle problematic cases
-                if (rawValue && rawValue !== 'all') {
-                    userId = String(rawValue).trim();
-                    
-                    if (userId === '[object Object]' || 
-                        userId.includes('object') || 
-                        userId === 'undefined' || 
-                        userId === 'null' ||
-                        userId.length === 0 ||
-                        userId === 'unknown') {
-                        console.warn('Invalid userId detected, using "all". Value was:', userId);
-                        userId = 'all';
-                    }
-                }
-            }
             
             const filters = {
                 performance,
                 vehicle,
-                userId,
                 dateFrom,
                 dateTo
             };

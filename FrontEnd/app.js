@@ -68,7 +68,6 @@ function setupEventListeners() {
     // Admin filter event listeners
     const performanceFilter = document.getElementById('performanceFilter');
     const vehicleFilter = document.getElementById('vehicleFilter');
-    const userFilter = document.getElementById('userFilter');
     const dateFromFilter = document.getElementById('dateFromFilter');
     const dateToFilter = document.getElementById('dateToFilter');
     const clearFilters = document.getElementById('clearFilters');
@@ -80,9 +79,6 @@ function setupEventListeners() {
     }
     if (vehicleFilter) {
         vehicleFilter.addEventListener('change', () => applyFiltersWithDebounce(100));
-    }
-    if (userFilter) {
-        userFilter.addEventListener('change', () => applyFiltersWithDebounce(100));
     }
     if (dateFromFilter) {
         dateFromFilter.addEventListener('change', () => applyFiltersWithDebounce(300));
@@ -658,7 +654,6 @@ function displayTrips(trips) {
 function clearAllFilters() {
     document.getElementById('performanceFilter').value = 'all';
     document.getElementById('vehicleFilter').value = 'all';
-    document.getElementById('userFilter').value = 'all';
     
     // Clear date filters
     document.getElementById('dateFromFilter').value = '';
