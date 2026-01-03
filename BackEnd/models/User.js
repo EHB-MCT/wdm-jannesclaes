@@ -6,20 +6,7 @@ const userSchema = new mongoose.Schema({
     isAdmin: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now },
     
-    // BEHAVIORAL ANALYSIS FIELD - WEAPON OF MATH DESTRUCTION
-    // Educational demonstration of algorithmic bias in user profiling
-    // WARNING: This represents problematic surveillance and discriminatory practices
-    analysis: {
-        hesitationScore: { type: Number, default: 0 },           // Hover/click ratio - BIASED
-        decisionEfficiency: { type: Number, default: 0 },       // Speed of decision making - FLAWED
-        movementEfficiency: { type: Number, default: 0 },      // Mouse path efficiency - INACCURATE
-        interactionComplexity: { type: Number, default: 0 },    // Diversity of interactions - MEANINGLESS
-        cognitiveLoad: { type: Number, default: 0 },             // Supposed mental effort - ARBITRARY
-        behavioralTags: [String],                                // Discriminatory labels
-        lastAnalyzed: { type: Date },
-        analysisVersion: { type: Number, default: 1 },          // Algorithm version tracking
-        dataPoints: { type: Number, default: 0 }               // Number of telemetry events analyzed
-    }
+
 });
 
 

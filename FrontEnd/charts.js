@@ -20,8 +20,6 @@ class AdminCharts {
         
         // Auto-refresh properties
         this.refreshInterval = null;
-        this.behavioralDebounceTimer = null;
-        this.autoRefreshEnabled = false;
     }
 
     // API calls
@@ -434,415 +432,114 @@ class AdminCharts {
         });
     }
 
-    // ==========================================
-    // ADMIN BEHAVIORAL ANALYSIS CHARTS
-    // ==========================================
-
-    // Fetch behavioral metrics for admin dashboard
-    async fetchBehavioralMetrics() {
-        const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-        const response = await fetch(`${window.BACKEND_URL || 'http://localhost:5050'}/api/analyze/metrics`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        return await response.json();
-    }
-
-    // Admin Behavioral Profile Distribution Chart
-    createAdminBehavioralProfileChart(tagData) {
-        if (!this.charts.adminBehavioralProfile) {
-            console.warn('Admin behavioral profile chart not initialized');
-            return;
-        }
-        if (!tagData || tagData.length === 0) {
-            console.warn('No behavioral profile data available');
-            return;
-        }
-        
-        const labels = Object.keys(tagData);
-        const data = Object.values(tagData);
-        
-        this.charts.adminBehavioralProfile.data.labels = labels;
-        this.charts.adminBehavioralProfile.data.datasets[0].data = data;
-        this.charts.adminBehavioralProfile.update('none');
-    }
-
-    // Admin Behavioral Average Metrics Chart
-    createAdminBehavioralAverageChart(averageData) {
-        if (!this.charts.adminBehavioralAverage) {
-            console.warn('Admin behavioral average chart not initialized');
-            return;
-        }
-        if (!averageData) {
-            console.warn('No behavioral average data available');
-            return;
-        }
-        
-        const metrics = [
-            { key: 'hesitationScore', label: 'Aarzeling' },
-            { key: 'decisionEfficiency', label: 'Beslissingsefficiëntie' },
-            { key: 'movementEfficiency', label: 'Bewegingsefficiëntie' },
-            { key: 'interactionComplexity', label: 'Interactiecomplexiteit' },
-            { key: 'cognitiveLoad', label: 'Cognitieve Belasting' }
-        ];
-        
-        const labels = metrics.map(m => m.label);
-        const data = metrics.map(m => Math.round((averageData[m.key] || 0) * 100));
-        
-        this.charts.adminBehavioralAverage.data.labels = labels;
-        this.charts.adminBehavioralAverage.data.datasets[0].data = data;
-        this.charts.adminBehavioralAverage.update('none');
-    }
-
-    // Admin Behavioral Tags Frequency Chart
-    createAdminBehavioralTagsChart(tagData) {
-        const canvas = document.getElementById('adminBehavioralTagsChart');
-        if (!canvas) {
-            console.error('Admin behavioral tags canvas not found!');
-            return;
-        }
-        
-        // Destroy existing chart if present
-        if (this.charts.adminBehavioralTags) {
-            this.charts.adminBehavioralTags.destroy();
-        }
-        
-        const ctx = canvas.getContext('2d');
-        console.log('Creating admin behavioral tags chart with data:', tagData);
-        
-        const labels = Object.keys(tagData);
-        const data = Object.values(tagData);
-        
-        this.charts.adminBehavioralTags = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Aantal Gebruikers',
-                    data: data,
-                    backgroundColor: this.colors.tertiary,
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Aantal Gebruikers'
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                }
-            }
-        });
-    }
-
-    // Admin Cognitive Load Distribution Chart (Real Data)
-    async createAdminCognitiveLoadChart() {
-        const canvas = document.getElementById('adminCognitiveLoadChart');
-        if (!canvas) {
-            console.error('Admin cognitive load canvas not found!');
-            return;
-        }
-        
-        // Destroy existing chart if present
-        if (this.charts.adminCognitiveLoad) {
-            this.charts.adminCognitiveLoad.destroy();
-        }
-        
-        const ctx = canvas.getContext('2d');
-        console.log('Creating admin cognitive load chart with real data');
-        
-        try {
-            // Get real cognitive load data from all analyzed users
-            const bins = {
-                '0-20%': 0,
-                '20-40%': 0,
-                '40-60%': 0,
-                '60-80%': 0,
-                '80-100%': 0
-            };
-            
-            const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-            const metricsResponse = await fetch(`${window.BACKEND_URL || 'http://localhost:5050'}/api/analyze/metrics`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            if (metricsResponse.ok) {
-                const metrics = await metricsResponse.json();
-                if (metrics.success && metrics.systemMetrics) {
-                    // Get individual user data for cognitive load distribution
-                    const usersResponse = await fetch(`${window.BACKEND_URL || 'http://localhost:5050'}/api/admin/users`, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
-                    
-                    if (usersResponse.ok) {
-                        const users = await usersResponse.json();
-                        users.forEach(user => {
-                            if (user.analysis && user.analysis.cognitiveLoad !== undefined) {
-                                const percentage = Math.round(user.analysis.cognitiveLoad * 100);
-                                if (percentage <= 20) bins['0-20%']++;
-                                else if (percentage <= 40) bins['20-40%']++;
-                                else if (percentage <= 60) bins['40-60%']++;
-                                else if (percentage <= 80) bins['60-80%']++;
-                                else bins['80-100%']++;
-                            }
-                        });
-                    }
-                }
-            }
-            
-            this.charts.adminCognitiveLoad = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: Object.keys(bins),
-                    datasets: [{
-                        label: 'Aantal Gebruikers',
-                        data: Object.values(bins),
-                        backgroundColor: this.colors.quaternary,
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Aantal Gebruikers'
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `${context.label}: ${context.raw} gebruikers`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-            
-        } catch (error) {
-            console.error('Error loading real cognitive load data:', error);
-            // Create empty chart with error message
-            this.createEmptyChart(ctx, 'Cognitive Load Data Unavailable', this.colors.quaternary);
-        }
-    }
-
-    // Initialize all charts
+    // Initialize all admin charts
     async initializeCharts() {
         try {
             console.log('Initializing admin charts...');
             
-            // Wait for DOM to be ready
-            if (document.readyState === 'loading') {
-                await new Promise(resolve => {
-                    document.addEventListener('DOMContentLoaded', resolve);
-                });
-            }
+            // Show loading state
+            this.showLoadingState();
             
-            // Wait for chart canvases to be available
-            let attempts = 0;
-            const maxAttempts = 20;
-            
-            while (attempts < maxAttempts) {
-                const vehicleCanvas = document.getElementById('vehicleUsageChart');
-                if (vehicleCanvas) break;
-                
-                await new Promise(resolve => setTimeout(resolve, 100));
-                attempts++;
-            }
-            
-            if (attempts >= maxAttempts) {
-                throw new Error('Chart canvases not found after waiting');
-            }
-            
+            // Fetch initial data
             const overviewData = await this.fetchOverviewStats();
-            console.log('Overview data:', overviewData);
-            console.log('Performance trend data:', overviewData.performanceTrend);
             const rankingsData = await this.fetchRankings();
-            console.log('Rankings data:', rankingsData);
             
-            console.log('Creating charts...');
-            this.createVehicleUsageChart(overviewData.vehicleStats);
-            console.log('✓ Vehicle usage chart created');
+            console.log('Initial overview data:', overviewData);
+            console.log('Initial rankings data:', rankingsData);
             
-            this.createMonthlyActivityChart(overviewData.monthlyActivity);
-            console.log('✓ Monthly activity chart created');
+            // Check if data is valid
+            if (!overviewData || !rankingsData) {
+                throw new Error('Geen data ontvangen van server');
+            }
             
-            this.createUserRankingsChart(rankingsData.userRankings);
-            console.log('✓ User rankings chart created');
-            
-            this.createHourlyPatternsChart(rankingsData.hourlyPatterns);
-            console.log('✓ Hourly patterns chart created');
-            
-            this.createEnvironmentalImpactChart(rankingsData.impactByVehicle);
-            console.log('✓ Environmental impact chart created');
+            // Create all charts
+            this.createVehicleUsageChart(overviewData.vehicleStats || []);
+            this.createMonthlyActivityChart(overviewData.monthlyActivity || []);
+            this.createUserRankingsChart(rankingsData.userRankings || []);
+            this.createHourlyPatternsChart(rankingsData.hourlyPatterns || []);
+            this.createEnvironmentalImpactChart(rankingsData.impactByVehicle || []);
             
             // Create performance trend chart
             if (overviewData.performanceTrend && overviewData.performanceTrend.length > 0) {
                 this.createPerformanceTrendChart(overviewData.performanceTrend);
-                console.log('✓ Performance trend chart created');
             }
-            
-            // Create distance efficiency chart
-            this.createDistanceEfficiencyChart();
-            console.log('✓ Distance efficiency chart created');
             
             // Load user selection
             await this.loadUserSelection();
-            
-            // Initialize admin behavioral charts
-            await this.initializeAdminBehavioralCharts();
             
             console.log('All charts initialized successfully!');
             
         } catch (error) {
             console.error('Error initializing charts:', error);
             this.showErrorToUser('Kan grafieken niet initialiseren: ' + error.message);
+        } finally {
+            // Hide loading state
+            this.hideLoadingState();
         }
     }
 
-    // Initialize admin behavioral charts
-    async initializeAdminBehavioralCharts() {
+    // Load user selection dropdown
+    async loadUserSelection() {
         try {
-            console.log('Initializing admin behavioral charts...');
+            console.log('Loading user selection...');
             
-            const metrics = await this.fetchBehavioralMetrics();
+            // Use rankings endpoint to get user data
+            const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+            const response = await fetch(`${window.BACKEND_URL || 'http://localhost:5050'}/api/admin/stats/rankings`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
             
-            if (metrics.success && metrics.systemMetrics) {
-                const tagData = metrics.systemMetrics.behavioralTagDistribution;
-                const averageData = metrics.systemMetrics.averageBiasedScores;
-                
-                // Create admin behavioral charts
-                this.createAdminBehavioralProfileChart(tagData);
-                this.createAdminBehavioralAverageChart(averageData);
-                this.createAdminBehavioralTagsChart(tagData);
-                await this.createAdminCognitiveLoadChart(metrics.systemMetrics);
-                
-                // Enable auto-refresh for real-time behavioral data updates
-                this.enableAutoRefresh(30000); // Refresh every 30 seconds
-                
-                console.log('✓ Admin behavioral charts initialized with auto-refresh!');
-            } else {
-                console.warn('No behavioral metrics available for admin charts');
+            if (!response.ok) {
+                console.warn('Could not load user selection:', response.status);
+                return;
             }
+            
+            const rankingsData = await response.json();
+            console.log('Rankings data loaded:', rankingsData);
+            
+            const userSelect = document.getElementById('performanceFilter');
+            if (!userSelect) {
+                console.warn('User selection dropdown not found');
+                return;
+            }
+            
+            // Get unique users from rankings data
+            const users = rankingsData.userRankings || [];
+            const uniqueUsers = [];
+            const userIds = new Set();
+            
+            users.forEach(user => {
+                if (!userIds.has(user._id)) {
+                    userIds.add(user._id);
+                    uniqueUsers.push({
+                        _id: user._id,
+                        username: user.username || 'Onbekend'
+                    });
+                }
+            });
+            
+            // Clear existing options (except the first "all" option)
+            const firstOption = userSelect.options[0];
+            userSelect.innerHTML = '';
+            userSelect.appendChild(firstOption);
+            
+            // Add user options
+            uniqueUsers.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user._id;
+                option.textContent = user.username || 'Onbekend';
+                userSelect.appendChild(option);
+            });
+            
+            console.log('User selection loaded successfully with', uniqueUsers.length, 'users');
             
         } catch (error) {
-            console.error('Error initializing admin behavioral charts:', error);
-            this.showErrorToUser('Kan gedragsgrafieken niet initialiseren: ' + error.message);
+            console.error('Error loading user selection:', error);
         }
     }
 
-    // Auto-refresh mechanism for behavioral charts
-    enableAutoRefresh(intervalMs = 30000) { // Default 30 seconds
-        this.autoRefreshEnabled = true;
-        this.refreshInterval = setInterval(async () => {
-            if (this.autoRefreshEnabled) {
-                try {
-                    await this.updateBehavioralChartsOnly();
-                    console.log('Behavioral charts auto-refreshed');
-                } catch (error) {
-                    console.error('Auto-refresh failed:', error);
-                }
-            }
-        }, intervalMs);
-    }
-
-    disableAutoRefresh() {
-        this.autoRefreshEnabled = false;
-        if (this.refreshInterval) {
-            clearInterval(this.refreshInterval);
-            this.refreshInterval = null;
-        }
-    }
-
-    // Update only behavioral charts (for performance)
-    async updateBehavioralChartsOnly() {
-        try {
-            console.log('Updating only behavioral charts...');
-            const metrics = await this.fetchBehavioralMetrics();
-            
-            if (metrics.success && metrics.systemMetrics) {
-                const tagData = metrics.systemMetrics.behavioralTagDistribution;
-                const averageData = metrics.systemMetrics.averageBiasedScores;
-                
-                // Update only behavioral charts without recreating
-                this.updateAdminBehavioralProfileChart(tagData);
-                this.updateAdminBehavioralAverageChart(averageData);
-                this.updateAdminBehavioralTagsChart(tagData);
-                await this.updateAdminCognitiveLoadChart();
-                
-                console.log('✓ Behavioral charts updated with real data!');
-            } else {
-                console.warn('No behavioral metrics available for charts update');
-            }
-        } catch (error) {
-            console.error('Error updating behavioral charts:', error);
-        }
-    }
-
-    // Debounced update for behavioral charts
-    updateBehavioralChartsWithDebounce() {
-        clearTimeout(this.behavioralDebounceTimer);
-        this.behavioralDebounceTimer = setTimeout(async () => {
-            await this.updateBehavioralChartsOnly();
-        }, 500); // 500ms debounce
-    }
-
-    // Helper method to create empty chart with error message
-    createEmptyChart(ctx, message, color = '#666') {
-        this.charts.adminCognitiveLoad = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Geen Data'],
-                datasets: [{
-                    label: message,
-                    data: [0],
-                    backgroundColor: color,
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 1
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                }
-            }
-        });
-    }
-
-    // Method for debounced filter updates
     applyFiltersWithDebounce(delay = 300) {
         clearTimeout(window.debounceTimer);
         window.debounceTimer = setTimeout(async () => {

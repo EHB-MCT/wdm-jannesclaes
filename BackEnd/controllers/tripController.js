@@ -1,5 +1,5 @@
 const Trip = require('../models/Trip');
-const { calculateBehavioralProfile } = require('./analysisController');
+
 
 // @desc    Add a new trip
 // @route   POST /api/trips (protected)
@@ -36,14 +36,7 @@ exports.createTrip = async (req, res) => {
 
         const analyzedTrip = calculateScore(newTrip);
         
-        // Get behavioral analysis for educational demonstration
-        try {
-            const behavioralAnalysis = await calculateBehavioralProfile(req.user.id);
-            analyzedTrip.behavioralAnalysis = behavioralAnalysis;
-        } catch (error) {
-            console.log('Behavioral analysis failed:', error.message);
-            analyzedTrip.behavioralAnalysis = null;
-        }
+
         
         res.status(201).json(analyzedTrip);
         

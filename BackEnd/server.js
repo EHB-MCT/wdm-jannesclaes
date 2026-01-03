@@ -9,7 +9,7 @@ const authRoutes = require('./routes/authRoutes');
 const tripRoutes = require('./routes/tripRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const telemetryRoutes = require('./routes/telemetryRoutes');
-const analysisRoutes = require('./routes/analysisRoutes'); // BEHAVIORAL PROFILING SYSTEM
+
 const geocodeRoutes = require('./routes/geocodeRoutes');
 
 const app = express();
@@ -51,10 +51,7 @@ app.use('/api/admin', adminRoutes);
 // 5. Telemetry routes (protected)
 app.use('/api/telemetry', telemetryRoutes);
 
-// 6. Analysis routes (behavioral profiling system) - EDUCATIONAL DEMONSTRATION
-// WARNING: This demonstrates problematic surveillance and discriminatory profiling
-// NEVER implement such systems in real applications
-app.use('/api/analyze', analysisRoutes);
+
 
 // 7. Geocode routes
 app.use('/api/geocode', geocodeRoutes);

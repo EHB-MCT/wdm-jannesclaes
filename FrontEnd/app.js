@@ -498,28 +498,8 @@ async function createTrip(trip) {
 
             loadTrips(); // Lijst verversen
             
-            // Build comprehensive alert with behavioral analysis
+            // Build simple alert
             let alertMessage = `Je score: ${result.efficiencyScore}\nOordeel: ${result.status}`;
-            
-            // Add behavioral analysis if available
-            if (result.behavioralAnalysis) {
-                const analysis = result.behavioralAnalysis;
-                alertMessage += `\n\n📊 BEHAVIORAL PROFILING RESULTATEN:`;
-                alertMessage += `\n🏷️  Labels: ${analysis.behavioralTags.join(', ')}`;
-                alertMessage += `\n📈 Hesitation: ${(analysis.metrics.hesitationScore * 100).toFixed(1)}%`;
-                alertMessage += `\n⚡ Decision Efficiency: ${(analysis.metrics.decisionEfficiency * 100).toFixed(1)}%`;
-                alertMessage += `\n🖱️  Movement Efficiency: ${(analysis.metrics.movementEfficiency * 100).toFixed(1)}%`;
-                alertMessage += `\n🧩 Interaction Complexity: ${(analysis.metrics.interactionComplexity * 100).toFixed(1)}%`;
-                alertMessage += `\n🧠 Cognitive Load: ${(analysis.metrics.cognitiveLoad * 100).toFixed(1)}%`;
-                alertMessage += `\n📊 Data Points Analyzed: ${analysis.dataPoints}`;
-                alertMessage += `\n\n⚠️  Dit is een "Weapon of Math Destruction" - bias algoritme voor educatieve doeleinden`;
-            }
-            
-            // Update behavioral charts immediately after trip creation with new data
-            if (result.behavioralAnalysis && window.adminChartsInstance) {
-                window.adminChartsInstance.updateBehavioralChartsWithDebounce();
-            }
-
             alert(alertMessage);
             
             // Reset form
