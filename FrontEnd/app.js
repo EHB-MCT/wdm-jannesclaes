@@ -498,9 +498,8 @@ async function createTrip(trip) {
 
             loadTrips(); // Lijst verversen
             
-            // Build simple alert
-            let alertMessage = `Je score: ${result.efficiencyScore}\nOordeel: ${result.status}`;
-            alert(alertMessage);
+            // Show comprehensive metrics modal
+            showMetricsModal(result);
             
             // Reset form
             document.getElementById("inputDestination").value = "";
@@ -646,3 +645,62 @@ function clearAllFilters() {
         adminCharts.updateChartsWithFilters({});
     }
 }
+
+// Modal functions for displaying metrics
+function showMetricsModal(tripData) {
+    // Update all metric values in the modal
+    document.getElementById('modal-efficiency-score').textContent = tripData.efficiencyScore || '-';
+    document.getElementById('modal-status').textContent = tripData.status || '-';
+    document.getElementById('modal-hesitation').textContent = tripData.hesitation || '0';
+    document.getElementById('modal-decision-efficiency').textContent = tripData.decisionEfficiency || '100';
+    document.getElementById('modal-movement-efficiency').textContent = tripData.movementEfficiency || '100';
+    document.getElementById('modal-interaction-complexity').textContent = tripData.interactionComplexity || '0';
+    document.getElementById('modal-cognitive-load').textContent = tripData.cognitiveLoad || '0';
+    document.getElementById('modal-data-points').textContent = tripData.dataPointsAnalyzed || '0';
+    
+    // Set status color for primary metric card
+    const primaryCard = document.querySelector('.metric-card.primary');
+    if (tripData.status === 'Eco Warrior') {
+        primaryCard.style.background = 'linear-gradient(135deg, #27ae60, #2ecc71)';
+    } else if (tripData.status === 'Eco Neutral') {
+        primaryCard.style.background = 'linear-gradient(135deg, #f39c12, #e67e22)';
+    } else {
+        primaryCard.style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)';
+    }
+    
+    // Show the modal
+    document.getElementById('metricsModal').style.display = 'flex';
+    
+    // Add animation classes
+    setTimeout(() => {
+        document.querySelector('.modal-content').style.animation = 'modalSlideIn 0.3s ease-out';
+    }, 10);
+}
+
+function closeMetricsModal() {
+    const modal = document.getElementById('metricsModal');
+    modal.style.display = 'none';
+    
+    // Reset form when modal is closed
+    document.getElementById("inputDestination").value = "";
+    document.getElementById("inputDuration").value = "1";
+    transport = "";
+    
+    // Remove active button styling
+    document.querySelectorAll('.btn').forEach(btn => btn.classList.remove('active'));
+}
+
+// Close modal when clicking outside the modal content
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('metricsModal');
+    if (event.target === modal) {
+        closeMetricsModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeMetricsModal();
+    }
+});

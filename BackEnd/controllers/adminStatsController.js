@@ -43,7 +43,7 @@ const getOverviewStats = async (req, res) => {
       .sort({ createdAt: -1 });
     
     // Calculate scores for all trips
-    const analyzedTrips = trips.map(trip => calculateScore(trip));
+    const analyzedTrips = await Promise.all(trips.map(trip => calculateScore(trip)));
     
     // Apply performance filter after scoring
     let filteredTrips = analyzedTrips;
@@ -65,7 +65,8 @@ const getOverviewStats = async (req, res) => {
     // Vehicle usage distribution
     const vehicleStats = {};
     filteredTrips.forEach(trip => {
-      vehicleStats[trip.vehicle] = (vehicleStats[trip.vehicle] || 0) + 1;
+      const vehicle = trip.vehicle || 'Onbekend';
+      vehicleStats[vehicle] = (vehicleStats[vehicle] || 0) + 1;
     });
     const vehicleStatsArray = Object.entries(vehicleStats)
       .map(([vehicle, count]) => ({ _id: vehicle, count }))
@@ -74,7 +75,8 @@ const getOverviewStats = async (req, res) => {
     // User performance distribution
     const performanceStats = {};
     filteredTrips.forEach(trip => {
-      performanceStats[trip.status] = (performanceStats[trip.status] || 0) + 1;
+      const status = trip.status || 'Onbekend';
+      performanceStats[status] = (performanceStats[status] || 0) + 1;
     });
     const performanceStatsArray = Object.entries(performanceStats)
       .map(([status, count]) => ({ _id: status, count }))
@@ -83,6 +85,8 @@ const getOverviewStats = async (req, res) => {
     // Monthly activity
     const monthlyActivity = {};
     filteredTrips.forEach(trip => {
+      if (!trip.createdAt) return;
+      
       const date = new Date(trip.createdAt);
       const year = date.getFullYear();
       const month = date.getMonth() + 1;
@@ -92,7 +96,7 @@ const getOverviewStats = async (req, res) => {
         monthlyActivity[key] = { _id: { year, month }, count: 0, totalEfficiency: 0 };
       }
       monthlyActivity[key].count++;
-      monthlyActivity[key].totalEfficiency += trip.efficiencyScore;
+      monthlyActivity[key].totalEfficiency += trip.efficiencyScore || 0;
     });
     
     Object.values(monthlyActivity).forEach(month => {
@@ -136,7 +140,7 @@ const getUserStats = async (req, res) => {
       .sort({ createdAt: -1 });
     
     // Calculate scores for all trips
-    const analyzedTrips = userTrips.map(trip => calculateScore(trip));
+    const analyzedTrips = await Promise.all(userTrips.map(trip => calculateScore(trip)));
     
     // User trip trends over time
     const tripTrends = {};
@@ -243,7 +247,7 @@ const getRankings = async (req, res) => {
       .sort({ createdAt: -1 });
     
     // Calculate scores for all trips
-    const analyzedTrips = trips.map(trip => calculateScore(trip));
+    const analyzedTrips = await Promise.all(trips.map(trip => calculateScore(trip)));
     
     // Apply performance filter after scoring
     let filteredTrips = analyzedTrips;
@@ -258,19 +262,19 @@ const getRankings = async (req, res) => {
     // User rankings by average efficiency
     const userRankingsMap = {};
     filteredTrips.forEach(trip => {
-      const username = trip.userId ? trip.userId.username : 'Onbekend';
+      const username = trip.userId && trip.userId.username ? trip.userId.username : 'Onbekend';
       if (!userRankingsMap[username]) {
         userRankingsMap[username] = { 
           username, 
           totalEfficiency: 0, 
           totalTrips: 0, 
           totalDistance: 0,
-          _id: trip.userId._id || trip.userId 
+          _id: (trip.userId && trip.userId._id) ? trip.userId._id : trip.userId || 'unknown'
         };
       }
-      userRankingsMap[username].totalEfficiency += trip.efficiencyScore;
+      userRankingsMap[username].totalEfficiency += trip.efficiencyScore || 0;
       userRankingsMap[username].totalTrips++;
-      userRankingsMap[username].totalDistance += trip.distance;
+      userRankingsMap[username].totalDistance += trip.distance || 0;
     });
     
     Object.values(userRankingsMap).forEach(user => {

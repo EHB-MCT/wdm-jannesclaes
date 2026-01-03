@@ -34,9 +34,17 @@ exports.createTrip = async (req, res) => {
             createdAt: new Date()
         });
 
-        const analyzedTrip = calculateScore(newTrip);
+        // Analyze telemetry for advanced metrics
+        const telemetryMetrics = await analyzeTelemetry(req.user.id, new Date(Date.now() - 300000)); // Last 5 minutes
         
-
+        // Update trip with telemetry metrics
+        await Trip.findByIdAndUpdate(newTrip._id, {
+            ...telemetryMetrics
+        });
+        
+        // Get updated trip with all metrics
+        const updatedTrip = await Trip.findById(newTrip._id);
+        const analyzedTrip = await calculateScore(updatedTrip);
         
         res.status(201).json(analyzedTrip);
         
@@ -53,7 +61,7 @@ exports.getTrips = async (req, res) => {
             .sort({ createdAt: -1 })
             .populate('userId', 'username');
         
-        const analyzedTrips = trips.map(trip => calculateScore(trip));
+        const analyzedTrips = await Promise.all(trips.map(trip => calculateScore(trip)));
         
         res.status(200).json(analyzedTrips);
     } catch (error) {
@@ -90,7 +98,7 @@ exports.getAllTrips = async (req, res) => {
             .sort({ createdAt: -1 }); // Nieuwste eerst
         
         // Voeg scores toe voor weergave
-        const analyzedTrips = trips.map(trip => calculateScore(trip));
+        const analyzedTrips = await Promise.all(trips.map(trip => calculateScore(trip)));
         
         res.status(200).json(analyzedTrips);
     } catch (error) {
@@ -115,8 +123,179 @@ function toRadians(degrees) {
     return degrees * (Math.PI / 180);
 }
 
+// Telemetry analysis functions for advanced metrics
+async function analyzeTelemetry(userId, sessionStartTime = null) {
+    try {
+        const Telemetry = require('./../models/Telemetry');
+        
+        // Get telemetry data for the user during this session
+        const timeFilter = sessionStartTime ? { timestamp: { $gte: sessionStartTime } } : {};
+        const telemetryData = await Telemetry.find({ 
+            userId, 
+            ...timeFilter 
+        }).sort({ timestamp: 1 });
+        
+        if (telemetryData.length === 0) {
+            return {
+                hesitation: 0,
+                decisionEfficiency: 100,
+                movementEfficiency: 100,
+                interactionComplexity: 0,
+                cognitiveLoad: 0,
+                dataPointsAnalyzed: 0
+            };
+        }
+        
+        // Calculate hesitation (time between hover and click)
+        const hesitationData = calculateHesitation(telemetryData);
+        
+        // Calculate decision efficiency (decisive actions vs. indecisive ones)
+        const decisionEfficiency = calculateDecisionEfficiency(telemetryData);
+        
+        // Calculate movement efficiency (directness of mouse movements)
+        const movementEfficiency = calculateMovementEfficiency(telemetryData);
+        
+        // Calculate interaction complexity (number of different targets)
+        const interactionComplexity = calculateInteractionComplexity(telemetryData);
+        
+        // Calculate cognitive load (based on interaction speed and patterns)
+        const cognitiveLoad = calculateCognitiveLoad(telemetryData);
+        
+        return {
+            hesitation: hesitationData,
+            decisionEfficiency,
+            movementEfficiency,
+            interactionComplexity,
+            cognitiveLoad,
+            dataPointsAnalyzed: telemetryData.length
+        };
+    } catch (error) {
+        console.error('Telemetry analysis error:', error);
+        return {
+            hesitation: 0,
+            decisionEfficiency: 100,
+            movementEfficiency: 100,
+            interactionComplexity: 0,
+            cognitiveLoad: 0,
+            dataPointsAnalyzed: 0
+        };
+    }
+}
+
+function calculateHesitation(telemetryData) {
+    let totalHesitation = 0;
+    let hesitationCount = 0;
+    
+    for (let i = 0; i < telemetryData.length - 1; i++) {
+        const current = telemetryData[i];
+        const next = telemetryData[i + 1];
+        
+        // Look for hover followed by click on same target
+        if (current.actionType === 'hover' && next.actionType === 'click' && 
+            current.target === next.target) {
+            const hesitationTime = (next.timestamp - current.timestamp) / 1000; // Convert to seconds
+            totalHesitation += hesitationTime;
+            hesitationCount++;
+        }
+    }
+    
+    return hesitationCount > 0 ? Math.round(totalHesitation / hesitationCount * 10) / 10 : 0;
+}
+
+function calculateDecisionEfficiency(telemetryData) {
+    const clicks = telemetryData.filter(t => t.actionType === 'click');
+    const hovers = telemetryData.filter(t => t.actionType === 'hover');
+    
+    if (clicks.length === 0) return 100;
+    
+    // Higher ratio of clicks to hovers = more decisive
+    const ratio = clicks.length / (hovers.length || 1);
+    const efficiency = Math.min(100, Math.round(ratio * 100));
+    
+    return efficiency;
+}
+
+function calculateMovementEfficiency(telemetryData) {
+    const movements = telemetryData.filter(t => t.actionType === 'move');
+    
+    if (movements.length < 2) return 100;
+    
+    let totalDistance = 0;
+    let directDistance = 0;
+    
+    const start = movements[0];
+    const end = movements[movements.length - 1];
+    
+    // Calculate total path distance
+    for (let i = 0; i < movements.length - 1; i++) {
+        const current = movements[i];
+        const next = movements[i + 1];
+        
+        if (current.metadata && current.metadata.x && current.metadata.y && 
+            next.metadata && next.metadata.x && next.metadata.y) {
+            const dx = next.metadata.x - current.metadata.x;
+            const dy = next.metadata.y - current.metadata.y;
+            totalDistance += Math.sqrt(dx * dx + dy * dy);
+        }
+    }
+    
+    // Calculate direct distance
+    if (start.metadata && start.metadata.x && start.metadata.y && 
+        end.metadata && end.metadata.x && end.metadata.y) {
+        const dx = end.metadata.x - start.metadata.x;
+        const dy = end.metadata.y - start.metadata.y;
+        directDistance = Math.sqrt(dx * dx + dy * dy);
+    }
+    
+    // Efficiency ratio (direct vs. total path)
+    if (totalDistance === 0) return 100;
+    const efficiency = Math.min(100, Math.round((directDistance / totalDistance) * 100));
+    
+    return Math.max(0, efficiency);
+}
+
+function calculateInteractionComplexity(telemetryData) {
+    // Count unique targets
+    const uniqueTargets = new Set();
+    telemetryData.forEach(t => {
+        if (t.target) uniqueTargets.add(t.target);
+    });
+    
+    // Normalize to 0-100 scale (assuming 10+ unique targets is max complexity)
+    const complexity = Math.min(100, uniqueTargets.size * 10);
+    
+    return complexity;
+}
+
+function calculateCognitiveLoad(telemetryData) {
+    if (telemetryData.length < 2) return 0;
+    
+    let loadScore = 0;
+    const timeWindows = [];
+    
+    // Calculate interaction speed
+    for (let i = 1; i < telemetryData.length; i++) {
+        const prev = telemetryData[i - 1];
+        const curr = telemetryData[i];
+        const timeDiff = (curr.timestamp - prev.timestamp) / 1000; // seconds
+        
+        // Very fast interactions or very long pauses indicate higher load
+        if (timeDiff < 0.1) loadScore += 10; // Very fast
+        else if (timeDiff > 30) loadScore += 5; // Long pause
+    }
+    
+    // Add complexity factor
+    const uniqueTargets = new Set(telemetryData.map(t => t.target)).size;
+    loadScore += uniqueTargets * 2;
+    
+    // Normalize to 0-100
+    const cognitiveLoad = Math.min(100, Math.round(loadScore));
+    
+    return cognitiveLoad;
+}
+
 // Hulpfunctie: Het WMD Algoritme (op één plek zodat we het niet dubbel schrijven)
-function calculateScore(trip) {
+async function calculateScore(trip) {
     const tripObj = trip.toObject();
     
     // Distance-based scoring with realistic thresholds

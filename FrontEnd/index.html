@@ -173,6 +173,58 @@
             </div>
         </div>
     </div>
+    
+    <!-- Metrics Modal -->
+    <div id="metricsModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Rit Analyse Resultaten</h3>
+                <button class="modal-close" onclick="closeMetricsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="metrics-grid">
+                    <div class="metric-card primary">
+                        <h4>Eco Score</h4>
+                        <div class="metric-value" id="modal-efficiency-score">-</div>
+                        <div class="metric-label" id="modal-status">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Wachttraagheid</h4>
+                        <div class="metric-value" id="modal-hesitation">-</div>
+                        <div class="metric-unit">seconden</div>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Beslissingsefficiëntie</h4>
+                        <div class="metric-value" id="modal-decision-efficiency">-</div>
+                        <div class="metric-unit">%</div>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Bewegingsefficiëntie</h4>
+                        <div class="metric-value" id="modal-movement-efficiency">-</div>
+                        <div class="metric-unit">%</div>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Interactiecomplexiteit</h4>
+                        <div class="metric-value" id="modal-interaction-complexity">-</div>
+                        <div class="metric-unit">punten</div>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Cognitieve Belasting</h4>
+                        <div class="metric-value" id="modal-cognitive-load">-</div>
+                        <div class="metric-unit">%</div>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Analyse Punten</h4>
+                        <div class="metric-value" id="modal-data-points">-</div>
+                        <div class="metric-unit">data points</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" onclick="closeMetricsModal()">Begrepen!</button>
+            </div>
+        </div>
+    </div>
 </body>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
