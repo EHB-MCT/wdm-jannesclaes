@@ -9,8 +9,8 @@ Conform de richtlijnen van de opdracht wordt het gebruik van AI-tools hieronder 
 * **Gebruik**: Primaire ontwikkelingspartner. 
 * **Belangrijkste bijdragen**: Gebruikt voor het genereren van de kernstructuur van de backend en de verbinding met de frontend, het opzetten van de projectstructuur en de API-routing.
 * **Gespreksverslagen**:
-    * [PLAK HIER LINK NAAR JE OPENCODE GESPREK 1]
     * (https://opncd.ai/share/maD5dHDv)
+    * Helaas net ondervonden dat je geen oude gesprekken kna terughalen tenzij je de share command hebt gedaan waar ik in het begin nog niet van af wist dus kan helaas niet alle gesprekken terug laten zien.
 
 ### Google Gemini
 * **Gebruik**: Conceptualisering, debugging en het genereren van specifieke algoritmen.
