@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movement Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="wrapper">
+        <!-- Authentication Section -->
+        <div id="auth-section">
+            <h2>Movement Dashboard</h2>
+            
+            <!-- Login Form -->
+            <div id="login-form">
+                <h3>Inloggen</h3>
+                <span>
+                    <input type="text" id="loginUsername" placeholder="Gebruikersnaam">
+                    <p>gebruikersnaam</p>
+                </span>
+                <span>
+                    <input type="password" id="loginPassword" placeholder="Wachtwoord">
+                    <p>wachtwoord</p>
+                </span>
+                <div class="remember-me">
+                    <input type="checkbox" id="rememberMe">
+                    <label for="rememberMe">Onthoud mij</label>
+                </div>
+                <button id="loginBtn">Inloggen</button>
+                <div class="form-links">
+                    <p>Nog geen account? <a href="#" id="showRegister">Registreer hier</a></p>
+                </div>
+            </div>
+            
+            <!-- Register Form -->
+            <div id="register-form" style="display: none;">
+                <h3>Registreren</h3>
+                <span>
+                    <input type="text" id="registerUsername" placeholder="Gebruikersnaam">
+                    <p>gebruikersnaam (3-30 karakters)</p>
+                </span>
+                <span>
+                    <input type="password" id="registerPassword" placeholder="Wachtwoord">
+                    <p>wachtwoord (minimaal 8 karakters)</p>
+                </span>
+                <span>
+                    <input type="password" id="confirmPassword" placeholder="Bevestig wachtwoord">
+                    <p>bevestig wachtwoord</p>
+                </span>
+                <button id="registerBtn">Registreer</button>
+                <div class="form-links">
+                    <p>Al een account? <a href="#" id="showLogin">Inloggen</a></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trip Section (hidden until authenticated) -->
+        <div id="trip-section" style="display: none;">
+            <div id="dashboard">
+                <div id="user-info">
+                    <span id="user-welcome">Welkom, <span id="current-username"></span>!</span>
+                    <button id="adminBtn" style="display: none;">Admin Dashboard</button>
+                    <button id="logoutBtn">Uitloggen</button>
+                </div>
+                
+                <div id="buttons">        
+                    <button class="btn" id="carBtn">auto</button>
+                    <button class="btn" id="bikeBtn">fiets</button>
+                    <button class="btn" id="nmbsBtn">NMBS</button>
+                    <button class="btn" id="deLijnBtn">De Lijn</button>
+                    <button class="btn" id="walkBtn">te voet</button>
+                </div>
+
+                <div id="inputs">
+                    <span>
+                        <input type="text" id="inputDestination" placeholder="Bestemming">
+                        <p>bestemming</p>
+                    </span>
+                    
+                    <span>
+                        <input type="number" min="1" value="1" id="inputDuration">
+                        <p>minuten</p>
+                    </span>
+                </div>
+
+                <button id="submitBtn">Rit Toevoegen</button>
+                
+                <div id="wmd-results">
+                    <h3>Mijn Recent Scores</h3>
+                    <div id="tripList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard Section (hidden until authenticated admin) -->
+        <div id="admin-section" style="display: none;">
+            <div id="admin-dashboard">
+                <div id="admin-header">
+                    <span id="admin-welcome">Admin Panel</span>
+                    <button id="backToUserBtn">Terug naar Dashboard</button>
+                    <button id="logoutAdminBtn">Uitloggen</button>
+                </div>
+                
+                <div id="admin-filters">
+                    <select id="performanceFilter">
+                        <option value="all">Alle Ritten</option>
+                        <option value="criminal">Climate Criminal (<25)</option>
+                        <option value="neutral">Eco Neutral (25-74)</option>
+                        <option value="warrior">Eco Warrior (≥75)</option>
+                    </select>
+                    
+                    <select id="vehicleFilter">
+                        <option value="all">Alle Voertuigen</option>
+                        <option value="Auto">Auto</option>
+                        <option value="Fiets">Fiets</option>
+                        <option value="Openbaar Vervoer">Openbaar Vervoer</option>
+                        <option value="Vliegtuig">Vliegtuig</option>
+                        <option value="Anders">Anders</option>
+                    </select>
+                    
+
+                    
+                    <div class="date-filters">
+                        <input type="date" id="dateFromFilter" placeholder="Van datum">
+                        <span>tot</span>
+                        <input type="date" id="dateToFilter" placeholder="Tot datum">
+                    </div>
+                    
+                    <button id="clearFilters">Filters Wissen</button>
+                </div>
+                
+                <div id="admin-charts-container">
+                    <div class="charts-grid">
+                        <div class="chart-box">
+                            <h4>Gebruikers Prestaties Trend</h4>
+                            <canvas id="performanceTrendChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <h4>Voertuiggebruik</h4>
+                            <canvas id="vehicleUsageChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <h4>Gebruikers Ranglijst</h4>
+                            <canvas id="userRankingsChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <h4>Maandelijkse Activiteit</h4>
+                            <canvas id="monthlyActivityChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <h4>Afstand vs Efficiëntie</h4>
+                            <canvas id="distanceEfficiencyChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <h4>Dagelijkse Tijdspatronen</h4>
+                            <canvas id="hourlyPatternsChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <h4>Milieu Impact per Voertuig</h4>
+                            <canvas id="environmentalImpactChart"></canvas>
+                        </div>
+                    </div>
+
+                    
+
+                </div>
+                
+
+                <h3>Alle Geregistreerde Ritten</h3>
+                <div id="admin-trip-list"></div>
+            </div>
+        </div>
+    </div>
+</body>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="charts.js"></script>
+<script src="tracker.js"></script>
+<script src="app.js"></script>
+</html>
