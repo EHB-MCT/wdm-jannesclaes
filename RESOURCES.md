@@ -1,95 +1,56 @@
-# Resources
+# Bronnen & Naamsvermelding
 
-A collection of sources, tools, and conventions used throughout this project.
+Dit document geeft een overzicht van de bronnen, tools en educatieve materialen die zijn gebruikt om het **Movement Dashboard** te bouwen.
 
-## AI Development Tools
+## 1. AI-assistentie & Generatieve Tools
+Conform de richtlijnen van de opdracht wordt het gebruik van AI-tools hieronder gedocumenteerd. Deze tools zijn gebruikt om de ontwikkeling te versnellen, complexe logica te debuggen en boilerplate-code te genereren.
 
 ### OpenCode Assistant
-- **Description**: Interactive CLI tool for software engineering tasks and code assistance
-- **Usage**: Primary development assistant for this project
-- **Documentation**: https://opencode.ai
+* **Gebruik**: Primaire ontwikkelingspartner. 
+* **Belangrijkste bijdragen**: Gebruikt voor het genereren van de kernstructuur van de backend en de verbinding met de frontend, het opzetten van de projectstructuur en de API-routing.
+* **Gespreksverslagen**:
+    * [PLAK HIER LINK NAAR JE OPENCODE GESPREK 1]
+    * (https://opncd.ai/share/maD5dHDv)
 
 ### Google Gemini
-- **Description**: AI-powered code assistance and problem solving
-- **Usage**: Secondary development assistant and code review
-- **API Documentation**: https://ai.google.dev/docs
+* **Gebruik**: Conceptualisering, debugging en het genereren van specifieke algoritmen.
+* **Belangrijkste bijdragen**:
+    * Verfijnen van het "Weapon of Math Destruction" concept.
+    * Debuggen van problemen met de Docker-containerisatie.
+    * Genereren van de Telemetry/Tracker-logica.
+* **Gespreksverslagen**:
+    * (https://gemini.google.com/share/c865b4bf91db)
+    * (https://gemini.google.com/share/4861f15b0602)
 
-## Technology Documentation
+## 2. Algoritmen & Technieken
+Specifieke algoritmen en codeerpatronen die zijn gebruikt in de applicatielogica.
 
-### Backend Frameworks & Libraries
-- **Express.js**: https://expressjs.com/ - Web application framework for Node.js
-- **Mongoose**: https://mongoosejs.com/ - MongoDB object modeling for Node.js
-- **bcryptjs**: https://www.npmjs.com/package/bcryptjs - Password hashing library
-- **JWT**: https://jwt.io/ - JSON Web Token for authentication
-- **dotenv**: https://www.npmjs.com/package/dotenv - Environment variable management
+### Geospatiale Berekeningen (De Haversine-formule)
+* **Bestand**: `BackEnd/controllers/tripController.js`
+* **Bron**: [Movable Type Scripts - Calculate distance, bearing and more between Latitude/Longitude points](http://www.movable-type.co.uk/scripts/latlong.html)
+* **Gebruik**: De formule wordt gebruikt om de afstand "in vogelvlucht" tussen twee coördinaten te berekenen. Dit dient als basis voor de efficiëntiescore, waarbij bewust echte wegennetwerken worden genegeerd om algoritmische bias (vooringenomenheid) te simuleren.
 
-### Frontend Technologies
-- **Vanilla JavaScript**: https://developer.mozilla.org/en-US/docs/Web/JavaScript - Native JavaScript without frameworks
-- **HTML5**: https://developer.mozilla.org/en-US/docs/Web/HTML - Semantic markup and web standards
-- **CSS3**: https://developer.mozilla.org/en-US/docs/Web/CSS - Styling and responsive design
+### Telemetry Tracking (Event Throttling)
+* **Bestand**: `FrontEnd/tracker.js`
+* **Techniek**: **Throttling & Batching**.
+* **Uitleg Bron**: [GeeksForGeeks: JavaScript Throttling](https://www.geeksforgeeks.org/javascript-throttling/) en [MDN Web Docs: Performance](https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model/Events)
+* **Gebruik**: Om browservertraging te voorkomen tijdens het tracken van muisbewegingen, is een throttling-mechanisme geïmplementeerd (`moveThrottleDelay`). In plaats van elke pixelverandering naar de server te sturen, wordt data verzameld in een buffer en in batches verzonden (bijv. elke 5 seconden) om de netwerkbelasting te verminderen.
 
-### Database
-- **MongoDB**: https://docs.mongodb.com/ - NoSQL document database
-- **Haversine Formula**: Used for distance calculations between GPS coordinates
+## 3. Technology Stack & Documentatie
 
-### DevOps & Containerization
-- **Docker**: https://docs.docker.com/ - Container platform
-- **Docker Compose**: https://docs.docker.com/compose/ - Multi-container application orchestration
+### Infrastructuur & DevOps
+* **Docker & Docker Compose**:
+    * **Bron**: Erasmushogeschool Brussel - MCT Cursusmateriaal (Backend Web Development).
+    * **Gebruik**: Containerisatie van de Node.js API, Nginx frontend en MongoDB database.
 
-## Project Conventions
+### Backend Frameworks
+* **Node.js & Express**: [Express Documentatie](https://expressjs.com/)
+* **Mongoose (MongoDB ODM)**: [Mongoose Documentatie](https://mongoosejs.com/)
+* **JSON Web Tokens (JWT)**: [JWT.io Introductie](https://jwt.io/introduction) - Gebruikt voor stateless authenticatie via middleware.
 
-### Coding Standards
-- **File**: `STANDARDS.md` - Complete coding standards and conventions for this project
-- **Style Guide**: Consistent naming, formatting, and architectural patterns
+### Frontend
+* **Vanilla JavaScript**: [MDN Web Docs - JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+* **Design**: Eigen CSS zonder externe frameworks (zoals Bootstrap of Tailwind) om de applicatie lichtgewicht te houden.
 
-### Git Workflow
-- **Conventional Commits**: Following semantic commit message format
-- **Branch Strategy**: Feature branches from `main`
-- **Documentation**: See `CONTRIBUTING.MD` for contribution guidelines
-
-### Project Architecture
-- **Directory Structure**: Separated FrontEnd/BackEnd with clear separation of concerns
-- **API Design**: RESTful endpoints with JWT authentication
-- **Database Schema**: MongoDB collections for Users, Trips, and Telemetry
-
-## Educational Resources
-
-### Web Development
-- **MDN Web Docs**: https://developer.mozilla.org/ - Comprehensive web technology documentation
-- **Node.js Best Practices**: https://github.com/goldbergyoni/nodebestpractices - Node.js security and performance
-
-### Authentication & Security
-- **JWT Handbook**: https://auth0.com/resources/ebooks/jwt-handbook - JSON Web Token implementation guide
-- **OWASP Security**: https://owasp.org/ - Web application security best practices
-
-### Database Design
-- **MongoDB University**: https://university.mongodb.com/ - Free courses on MongoDB development
-- **NoSQL Database Design**: Patterns and best practices for document databases
-
-## Development Workflow
-
-### Environment Setup
-- **Docker Development**: Using Docker Compose for local development environment
-- **Environment Variables**: `.env.example` template for configuration management
-
-### Testing & Quality
-- **Manual Testing**: Browser-based testing for frontend functionality
-- **API Testing**: Endpoint verification through browser dev tools
-- **Code Review**: Peer review process following project standards
-
-### Deployment
-- **Container Strategy**: Docker containers for consistent deployment
-- **Service Orchestration**: Docker Compose for multi-service applications
-
-## Academic Sources
-
-This project is developed as part of an educational assignment, demonstrating:
-- Full-stack web application development
-- API design and implementation
-- Database integration and management
-- Containerization and deployment strategies
-- Sustainable transportation scoring algorithms
-
----
-
-**Note**: This resources list serves as a comprehensive reference for development, troubleshooting, and continued learning throughout the project lifecycle.
+## 4. Academische Integriteit
+Dit project is een individuele inzending voor de opdracht "Weapon of Math Destruction". Hoewel AI-tools codefragmenten en logica hebben aangeleverd, zijn de architecturale keuzes, het debuggen en de uiteindelijke implementatie uitgevoerd door de student.
