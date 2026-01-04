@@ -1,4 +1,5 @@
 const BACKEND_URL = "http://localhost:5050";
+window.BACKEND_URL = BACKEND_URL; // Make available to other scripts
 
 // DOM Elements
 const authSection = document.getElementById("auth-section");
@@ -31,6 +32,8 @@ const submitBtn = document.getElementById("submitBtn");
 let transport = "";
 let currentUser = null;
 let allTrips = []; // Store all trips for filtering
+let adminCharts = null; // Admin charts instance
+let debounceTimer = null; // Global debounce timer
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
@@ -65,17 +68,23 @@ function setupEventListeners() {
     // Admin filter event listeners
     const performanceFilter = document.getElementById('performanceFilter');
     const vehicleFilter = document.getElementById('vehicleFilter');
-    const userFilter = document.getElementById('userFilter');
+    const dateFromFilter = document.getElementById('dateFromFilter');
+    const dateToFilter = document.getElementById('dateToFilter');
     const clearFilters = document.getElementById('clearFilters');
     
+    // Add debouncing for date inputs to prevent excessive API calls
+    
     if (performanceFilter) {
-        performanceFilter.addEventListener('change', applyFilters);
+        performanceFilter.addEventListener('change', () => applyFiltersWithDebounce(100));
     }
     if (vehicleFilter) {
-        vehicleFilter.addEventListener('change', applyFilters);
+        vehicleFilter.addEventListener('change', () => applyFiltersWithDebounce(100));
     }
-    if (userFilter) {
-        userFilter.addEventListener('change', applyFilters);
+    if (dateFromFilter) {
+        dateFromFilter.addEventListener('change', () => applyFiltersWithDebounce(300));
+    }
+    if (dateToFilter) {
+        dateToFilter.addEventListener('change', () => applyFiltersWithDebounce(300));
     }
     if (clearFilters) {
         clearFilters.addEventListener('click', clearAllFilters);
@@ -103,18 +112,18 @@ function toRadians(degrees) {
     return degrees * (Math.PI / 180);
 }
 
-// Get coordinates from OpenStreetMap Nominatim API
+// Get coordinates from backend geocode API
 async function getDestinationCoordinates(destination) {
-    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destination)}`);
+    const response = await fetch(`${BACKEND_URL}/api/geocode/${encodeURIComponent(destination)}`);
     const data = await response.json();
     
-    if (data && data.length > 0) {
+    if (data && data.success) {
         return {
-            lat: parseFloat(data[0].lat),
-            lon: parseFloat(data[0].lon)
+            lat: data.lat,
+            lon: data.lon
         };
     }
-    throw new Error(`Geen coördinaten gevonden voor "${destination}"`);
+    throw new Error(data.message || `Geen coördinaten gevonden voor "${destination}"`);
 }
 
 // Get user's current location
@@ -188,6 +197,11 @@ async function login() {
             showTripSection();
             loadTrips();
             
+            // Start telemetry tracking after successful login
+            if (window.telemetryTracking) {
+                window.telemetryTracking.start();
+            }
+            
         } else {
             alert(data.message || "Inloggen mislukt");
         }
@@ -240,6 +254,11 @@ async function register() {
             showTripSection();
             loadTrips();
             
+            // Start telemetry tracking after successful registration
+            if (window.telemetryTracking) {
+                window.telemetryTracking.start();
+            }
+            
         } else {
             alert(data.message || "Registreren mislukt");
         }
@@ -258,6 +277,12 @@ function logout() {
     sessionStorage.removeItem('authToken');
     currentUser = null;
     transport = "";
+    
+    // Stop telemetry tracking on logout
+    if (window.telemetryTracking) {
+        window.telemetryTracking.stop();
+    }
+    
     showAuthSection();
 }
 
@@ -269,17 +294,29 @@ function checkAuthStatus() {
         fetch(`${BACKEND_URL}/api/auth/profile`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
-        .then(response => response.json())
-        .then(data => {
+        .then(response => {
             if (response.ok) {
-                currentUser = data.user;
-                showTripSection();
-                loadTrips();
+                return response.json();
             } else {
-                showAuthSection();
+                throw new Error('Token invalid');
             }
         })
-        .catch(() => showAuthSection());
+        .then(data => {
+            currentUser = data.user;
+            showTripSection();
+            loadTrips();
+            
+            // Start telemetry tracking for existing valid token
+            if (window.telemetryTracking) {
+                window.telemetryTracking.start();
+            }
+        })
+        .catch(() => {
+            // Clear invalid tokens and show auth section
+            localStorage.removeItem('authToken');
+            sessionStorage.removeItem('authToken');
+            showAuthSection();
+        });
     } else {
         showAuthSection();
     }
@@ -321,6 +358,37 @@ function showAdminSection() {
     tripSection.style.display = 'none';
     adminSection.style.display = 'block';
     loadAllTrips();
+    
+    // Set default date filters (1 year back)
+    const dateFromFilter = document.getElementById('dateFromFilter');
+    const dateToFilter = document.getElementById('dateToFilter');
+    
+    if (dateFromFilter && !dateFromFilter.value) {
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        dateFromFilter.value = oneYearAgo.toISOString().split('T')[0];
+    }
+    
+    if (dateToFilter && !dateToFilter.value) {
+        const today = new Date();
+        dateToFilter.value = today.toISOString().split('T')[0];
+    }
+    
+    // Initialize admin charts if not already done
+    if (!adminCharts) {
+        // Check if AdminCharts is available
+        if (typeof AdminCharts === 'undefined') {
+            console.error('AdminCharts class not loaded!');
+            return;
+        }
+        
+        adminCharts = window.adminChartsInstance || new AdminCharts();
+        if (adminCharts) {
+            setTimeout(() => {
+                adminCharts.initializeCharts();
+            }, 200);
+        }
+    }
 }
 
 async function loadAllTrips() {
@@ -342,7 +410,7 @@ async function loadAllTrips() {
             displayTrips(allTrips);
             
             // Calculate and display user performance
-            displayUserPerformance(allTrips);
+
         } else {
             const list = document.getElementById('admin-trip-list');
             if (list) {
@@ -429,7 +497,10 @@ async function createTrip(trip) {
         if (response.ok) {
 
             loadTrips(); // Lijst verversen
-            alert(`Je score: ${result.efficiencyScore}\nOordeel: ${result.status}`);
+            
+            // Build simple alert
+            let alertMessage = `Je score: ${result.efficiencyScore}\nOordeel: ${result.status}`;
+            alert(alertMessage);
             
             // Reset form
             document.getElementById("inputDestination").value = "";
@@ -558,150 +629,20 @@ function displayTrips(trips) {
     `;
 }
 
-function displayUserPerformance(trips) {
-    // Calculate user statistics
-    const userStats = {};
-    
-    trips.forEach(trip => {
-        const username = trip.userId ? trip.userId.username : 'Onbekend';
-        if (!userStats[username]) {
-            userStats[username] = {
-                totalTrips: 0,
-                lowPerformingTrips: 0,
-                totalScore: 0,
-                vehicles: {}
-            };
-        }
-        
-        userStats[username].totalTrips++;
-        userStats[username].totalScore += trip.efficiencyScore;
-        
-        if (trip.status === 'Low Value') {
-            userStats[username].lowPerformingTrips++;
-        }
-        
-        // Track vehicle usage
-        if (!userStats[username].vehicles[trip.vehicle]) {
-            userStats[username].vehicles[trip.vehicle] = 0;
-        }
-        userStats[username].vehicles[trip.vehicle]++;
-    });
-    
-    // Calculate average scores and performance levels
-    const allUsers = [];
-    
-    Object.keys(userStats).forEach(username => {
-        const stats = userStats[username];
-        stats.averageScore = Math.round(stats.totalScore / stats.totalTrips);
-        stats.lowPerformingPercentage = Math.round((stats.lowPerformingTrips / stats.totalTrips) * 100);
-        
-        // Determine performance level
-        let performanceLevel, badgeColor, badgeText;
-        if (stats.lowPerformingPercentage > 70) {
-            performanceLevel = 'SLECHT';
-            badgeColor = '#ff2e1f';
-        } else if (stats.lowPerformingPercentage > 30) {
-            performanceLevel = 'GEMIDDELD';
-            badgeColor = '#ff9500';
-        } else {
-            performanceLevel = 'GOED';
-            badgeColor = '#2ecc71';
-        }
-        
-        // Get most used vehicle
-        const mostUsedVehicle = Object.keys(stats.vehicles).reduce(
-            (a, b) => stats.vehicles[a] > stats.vehicles[b] ? a : b
-        );
-        
-        allUsers.push({
-            username,
-            ...stats,
-            performanceLevel,
-            badgeColor,
-            mostUsedVehicle
-        });
-    });
-    
-    // Sort by average score (highest first) and then by username
-    allUsers.sort((a, b) => {
-        if (b.averageScore !== a.averageScore) {
-            return b.averageScore - a.averageScore;
-        }
-        return a.username.localeCompare(b.username);
-    });
-    
-    // Display all users
-    const summaryDiv = document.getElementById('user-performance-summary');
-    const usersDiv = document.getElementById('all-users-performance');
-    
-    if (summaryDiv && usersDiv) {
-        summaryDiv.style.display = 'block';
-        usersDiv.innerHTML = allUsers.map(user => `
-            <div class="user-performance-card">
-                <div class="user-info">
-                    <div class="username">${user.username}</div>
-                    <div class="stats">
-                        ${user.totalTrips} ritten • Gem. score: ${user.averageScore} • 
-                        ${user.lowPerformingPercentage}% slecht • Meest gebruikt: ${user.mostUsedVehicle}
-                    </div>
-                </div>
-                <div class="performance-badge" style="background-color: ${user.badgeColor};">${user.performanceLevel}</div>
-            </div>
-        `).join('');
-    }
-}
 
-function applyFilters() {
-    const performanceFilter = document.getElementById('performanceFilter').value;
-    const vehicleFilter = document.getElementById('vehicleFilter').value;
-    const userFilter = document.getElementById('userFilter').value;
-    
-    let filteredTrips = [...allTrips];
-    
-    // Performance filter
-    if (performanceFilter === 'low') {
-        filteredTrips = filteredTrips.filter(trip => trip.efficiencyScore <= 30);
-    } else if (performanceFilter === 'high') {
-        filteredTrips = filteredTrips.filter(trip => trip.efficiencyScore > 30);
-    }
-    
-    // Vehicle filter
-    if (vehicleFilter !== 'all') {
-        filteredTrips = filteredTrips.filter(trip => trip.vehicle === vehicleFilter);
-    }
-    
-    // User filter for low performing users
-    if (userFilter === 'lowPerforming') {
-        // Get low performing users
-        const userStats = {};
-        allTrips.forEach(trip => {
-            const username = trip.userId ? trip.userId.username : 'Onbekend';
-            if (!userStats[username]) {
-                userStats[username] = { total: 0, low: 0 };
-            }
-            userStats[username].total++;
-            if (trip.status === 'Low Value') {
-                userStats[username].low++;
-            }
-        });
-        
-        const lowPerformingUsernames = Object.keys(userStats).filter(
-            username => (userStats[username].low / userStats[username].total) > 0.7
-        );
-        
-        filteredTrips = filteredTrips.filter(trip => {
-            const username = trip.userId ? trip.userId.username : 'Onbekend';
-            return lowPerformingUsernames.includes(username);
-        });
-    }
-    
-    displayTrips(filteredTrips);
-}
 
 function clearAllFilters() {
     document.getElementById('performanceFilter').value = 'all';
     document.getElementById('vehicleFilter').value = 'all';
-    document.getElementById('userFilter').value = 'all';
+    
+    // Clear date filters
+    document.getElementById('dateFromFilter').value = '';
+    document.getElementById('dateToFilter').value = '';
     
     displayTrips(allTrips);
+    
+    // Update charts with cleared filters
+    if (adminCharts) {
+        adminCharts.updateChartsWithFilters({});
+    }
 }

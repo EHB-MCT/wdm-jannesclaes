@@ -8,7 +8,7 @@ const Trip = require('./models/Trip');
 const DAYS_TO_SIMULATE = 90; 
 
 // Verbinden
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/wmd_project';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://wmd_mongo:27017/wmd_project';
 mongoose.connect(MONGO_URI)
     .then(() => {
         console.log('🔌 Verbonden voor seeding...');

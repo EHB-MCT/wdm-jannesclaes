@@ -35,12 +35,23 @@ A web application for tracking and scoring daily transportation choices based on
    cd wdm-jannesclaes
    ```
 
-2. **Start with Docker**:
+2. **Setup environment**:
    ```bash
-   docker-compose up -d
+   cd BackEnd
+   cp .env.example .env
+   cd ..
    ```
 
-3. **Access the application**:
+3. **Create admin account (first time only)**:
+   ```bash
+   npm run docker-seed
+   ```
+   
+   Admin credentials:
+   - Username: `admin`
+   - Password: `admin1234`
+
+4. **Access the application**:
    - Frontend: http://localhost:1234
    - Backend API: http://localhost:5050
    - Database: MongoDB on port 27017
@@ -59,6 +70,8 @@ A web application for tracking and scoring daily transportation choices based on
 ## Development
 
 For development setup and coding standards, see `STANDARDS.md`.
+
+For resources, tools, and documentation, see `RESOURCES.md`.
 
 ## Contributing
 
